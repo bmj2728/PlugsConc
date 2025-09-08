@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"time"
 )
 
@@ -11,9 +12,9 @@ const (
 	ctxKeyWorkerID = ctxKey("worker_id")
 )
 
-// JobWorkerIDKey is a constant key used to associate a worker's unique ID with context or logging operations.
+// KeyWorkerID is a constant key used to associate a worker's unique ID with context or logging operations.
 const (
-	JobWorkerIDKey = "worker_id"
+	KeyWorkerID = "worker_id"
 )
 
 // WithWorkerID returns a new context based on the parent context with the worker ID stored as a value.
@@ -49,7 +50,7 @@ func NewWorker(id int, jobs <-chan *Job, results chan<- *JobResult, quit chan st
 // Start begins the worker's execution loop, processing jobs from the channel and sending results
 // to the results channel.
 func (w *Worker) Start() {
-	slogWorkerID := slog.Int(JobWorkerIDKey, w.id)
+	slogWorkerID := slog.Int(KeyWorkerID, w.id)
 	slog.With(slogWorkerID).Debug("Worker started")
 	defer slog.With(slogWorkerID).Debug("Worker stopped")
 
@@ -61,6 +62,7 @@ func (w *Worker) Start() {
 			}
 			// annotate job context
 			job.Ctx = WithWorkerID(job.Ctx, w.id)
+			job.SetStartedAt()
 
 			// ensure cancellation and panic safety
 			resultVal, err := func() (val any, err error) {
@@ -75,7 +77,7 @@ func (w *Worker) Start() {
 				// panic safety: convert panics to errors
 				defer func() {
 					if r := recover(); r != nil {
-						err = fmt.Errorf("panic: %v", r)
+						err = fmt.Errorf("panic: %v\nstack: %s\n", r, string(debug.Stack()))
 					}
 				}()
 
@@ -88,6 +90,7 @@ func (w *Worker) Start() {
 					//  the default case is to continue the loop
 					select {
 					case <-job.Ctx.Done():
+						job.SetFinishedAt()
 						return nil, job.Ctx.Err()
 					default:
 					}
@@ -97,14 +100,15 @@ func (w *Worker) Start() {
 					// if the job succeeded, or we've reached the max retries, return the result/error
 					//  otherwise, retry the job with a delay between retries'
 					if e == nil || attempt >= job.MaxRetries {
+						job.SetFinishedAt()
 						return v, e
 					}
 
 					// log retry
 					slog.With(
 						slogWorkerID,
-						slog.String(JobIDKey, job.ID),
-						slog.Int(RetryCountKey, attempt+1),
+						slog.String(KeyJobID, job.ID),
+						slog.Int(KeyRetryCount, attempt+1),
 					).Warn("Retrying job")
 
 					// wait for the retry delay before continuing the loop
@@ -115,6 +119,7 @@ func (w *Worker) Start() {
 						select {
 						case <-job.Ctx.Done():
 							t.Stop()
+							job.SetFinishedAt()
 							return nil, job.Ctx.Err()
 						case <-t.C:
 						}
@@ -124,16 +129,17 @@ func (w *Worker) Start() {
 
 			// Safely send the result or quit if the pool is terminated.
 			select {
-			case w.results <- NewJobResult(job, resultVal, err):
+			case w.results <- NewJobResult(job, w.id, resultVal, err):
 				// Result sent successfully.
 			case <-w.quit:
 				// Pool was terminated while trying to send the result.
 				// Log that the result is being discarded and exit the worker.
+				job.SetFinishedAt()
 				slog.With(slogWorkerID, job.LogValue()).Warn("Worker terminated before sending result")
 				return
 			}
 
-			attrs := []any{slogWorkerID, slog.String(JobIDKey, job.ID)}
+			attrs := []any{slogWorkerID, slog.String(KeyJobID, job.ID)}
 			if err != nil {
 				slog.With(attrs...).Error("Job failed", slog.Any("error", err))
 			} else {
