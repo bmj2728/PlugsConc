@@ -8,6 +8,16 @@ import (
 	"github.com/bmj2728/utils/pkg/strutil"
 )
 
+type ctxKey string
+
+const (
+	ctxKeyJobID      = ctxKey("job_id")
+	ctxKeyMaxRetries = ctxKey("max_retries")
+	ctxKeyRetryDelay = ctxKey("retry_delay")
+	ctxKeyRetryCount = ctxKey("retry_count")
+	ctxKeyWorkerID   = ctxKey("worker_id")
+)
+
 const (
 	JobIDKey      = "job_id"
 	MaxRetriesKey = "max_retries"
@@ -16,7 +26,7 @@ const (
 )
 
 // WorkUnit defines a function type that performs a unit of work and returns a value of any type.
-type WorkUnit func() (any, error)
+type WorkUnit func(ctx context.Context) (any, error)
 
 // Job represents a unit of work with an associated unique identifier and an executable function.
 type Job struct {
@@ -45,9 +55,9 @@ func NewJob(ctx context.Context, execute WorkUnit) *Job {
 func (j *Job) WithRetry(maxRetries int, retryDelay int) *Job {
 	j.MaxRetries = maxRetries
 	j.RetryDelay = retryDelay
-	j.Ctx = context.WithValue(j.Ctx, MaxRetriesKey, maxRetries)
-	j.Ctx = context.WithValue(j.Ctx, RetryDelayKey, retryDelay)
-	j.Ctx = context.WithValue(j.Ctx, RetryCountKey, 0)
+	j.Ctx = context.WithValue(j.Ctx, ctxKeyMaxRetries, maxRetries)
+	j.Ctx = context.WithValue(j.Ctx, ctxKeyRetryDelay, retryDelay)
+	j.Ctx = context.WithValue(j.Ctx, ctxKeyRetryCount, 0)
 	return j
 }
 

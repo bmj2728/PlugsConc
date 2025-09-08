@@ -117,7 +117,6 @@ func (c *ColorHandler) Handle(ctx context.Context, r slog.Record) error {
 		return nil
 	}
 	color := c.getColor(r.Level)
-	reset := ResetColor
 	// get a buffer from the sync pool
 	buf := make([]byte, 0, 1024)
 	// set the color for the log level
@@ -131,8 +130,13 @@ func (c *ColorHandler) Handle(ctx context.Context, r slog.Record) error {
 	buf = append(buf, r.Message...)
 	buf = append(buf, ' ')
 	buf = append(buf, c.preformatted...)
+	r.Attrs(func(a slog.Attr) bool {
+		entry := fmt.Sprintf("%s:%s ", a.Key, a.Value)
+		buf = append(buf, entry...)
+		return true
+	})
 	// reset the color
-	buf = append(buf, reset...)
+	buf = append(buf, ResetColor...)
 	buf = append(buf, '\n')
 	c.mu.Lock()
 	defer c.mu.Unlock()

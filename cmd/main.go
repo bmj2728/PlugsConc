@@ -49,13 +49,16 @@ func main() {
 		someValTheWorkerDoesNotKnow := rand.Intn(10) + 1
 		ctx := context.Background()
 
-		newJob := worker.NewJob(ctx, func() (any, error) {
+		newJob := worker.NewJob(ctx, func(ctx context.Context) (any, error) {
 			res := strutil.LoremSentences(someValTheWorkerDoesNotKnow)
 			return res, nil
 		}).WithRetry(3, 1000).
 			WithTimeout(1 * time.Second)
 
-		pool.Submit(newJob)
+		err := pool.Submit(newJob)
+		if err != nil {
+			return
+		}
 	}
 
 	pool.Shutdown()
