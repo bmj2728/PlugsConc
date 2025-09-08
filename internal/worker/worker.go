@@ -39,7 +39,7 @@ func (w *Worker) Start() {
 
 	for job := range w.jobs {
 		// annotate job context (assuming ctxKey is your private typed key)
-		job.Ctx = context.WithValue(job.Ctx, ctxKeyJobID, w.id)
+		job.Ctx = context.WithValue(job.Ctx, ctxKeyWorkerID, w.id)
 
 		// ensure cancellation and panic safety
 		resultVal, err := func() (val any, err error) {
