@@ -43,7 +43,7 @@ type Job struct {
 // NewJob creates and initializes a new Job instance with a unique ID and the provided execution logic.
 func NewJob(ctx context.Context, execute WorkUnit) *Job {
 	uuid := strutil.GenerateUUIDV7()
-	updatedCtx := context.WithValue(ctx, JobIDKey, uuid)
+	updatedCtx := context.WithValue(ctx, ctxKeyJobID, uuid)
 	return &Job{
 		ID:      uuid,
 		Execute: execute,
