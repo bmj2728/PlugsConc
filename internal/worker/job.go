@@ -15,8 +15,18 @@ const (
 	ctxKeyMaxRetries = ctxKey("max_retries")
 	ctxKeyRetryDelay = ctxKey("retry_delay")
 	ctxKeyRetryCount = ctxKey("retry_count")
-	ctxKeyWorkerID   = ctxKey("worker_id")
 )
+
+// WithJobID returns a copy of the parent context with the specified job ID added as a value.
+func WithJobID(parent context.Context, id string) context.Context {
+	return context.WithValue(parent, ctxKeyJobID, id)
+}
+
+// JobIDFromContext retrieves the job ID from the given context. It assumes the context contains a value for
+// the "job_id" key.
+func JobIDFromContext(ctx context.Context) string {
+	return ctx.Value(ctxKeyJobID).(string)
+}
 
 const (
 	JobIDKey      = "job_id"
@@ -43,7 +53,7 @@ type Job struct {
 // NewJob creates and initializes a new Job instance with a unique ID and the provided execution logic.
 func NewJob(ctx context.Context, execute WorkUnit) *Job {
 	uuid := strutil.GenerateUUIDV7()
-	updatedCtx := context.WithValue(ctx, ctxKeyJobID, uuid)
+	updatedCtx := WithJobID(ctx, uuid)
 	return &Job{
 		ID:      uuid,
 		Execute: execute,

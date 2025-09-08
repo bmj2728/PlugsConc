@@ -16,6 +16,7 @@ type Pool struct {
 	results    chan *JobResult
 	wg         *sync.WaitGroup
 	closed     atomic.Bool
+	quit       chan struct{}
 }
 
 // NewPool creates and initializes a new Pool with the specified number of workers
@@ -40,17 +41,18 @@ func NewPool(maxWorkers int, buffer int) *Pool {
 		jobs:       jobs,
 		results:    results,
 		wg:         &sync.WaitGroup{},
+		quit:       make(chan struct{}),
 	}
 }
 
 // Run initializes and starts all workers in the pool, ensuring they are ready to process jobs concurrently.
 func (p *Pool) Run() {
 	for i := 1; i <= p.maxWorkers; i++ {
-		nw := NewWorker(i, p.jobs, p.results)
+		nw := NewWorker(i, p.jobs, p.results, p.quit)
 		p.wg.Add(1)
 		go func(w *Worker) {
 			defer p.wg.Done() // Signal completion when the goroutine exits
-			nw.Start()
+			w.Start()
 		}(nw)
 	}
 }
@@ -103,13 +105,13 @@ func (p *Pool) Stop() {
 	if p.closed.CompareAndSwap(false, true) {
 		close(p.jobs)
 		p.wg.Wait()
-		close(p.results)
 	}
 }
 
-// Terminate closes the job and result channels, ceasing all job submissions and result retrievals.
+// Terminate signals the worker pool to terminate all workers immediately.
 func (p *Pool) Terminate() {
 	if p.closed.CompareAndSwap(false, true) {
+		// Cancel any ongoing work by closing channels immediately
 		close(p.jobs)
 		close(p.results)
 	}

@@ -131,7 +131,7 @@ func (c *ColorHandler) Handle(ctx context.Context, r slog.Record) error {
 	buf = append(buf, ' ')
 	buf = append(buf, c.preformatted...)
 	r.Attrs(func(a slog.Attr) bool {
-		entry := fmt.Sprintf("%s:%s ", a.Key, a.Value)
+		entry := fmt.Sprintf("%s=%s ", a.Key, a.Value)
 		buf = append(buf, entry...)
 		return true
 	})
@@ -157,7 +157,7 @@ func (c *ColorHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	copy(c2.preformatted, c.preformatted)
 	if c2.unopenedGroup == "" {
 		for _, attr := range attrs {
-			entry := fmt.Sprintf("%s:%s ", attr.Key, attr.Value)
+			entry := fmt.Sprintf("%s=%s ", attr.Key, attr.Value)
 			c2.preformatted = append(c2.preformatted, entry...)
 		}
 	} else if c2.unopenedGroup != "" {
