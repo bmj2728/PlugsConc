@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"runtime"
 	"sync"
 )
 
@@ -31,8 +32,9 @@ var (
 
 	// DefaultOptions defines the default logging configuration with an info log level and a predefined color map.
 	DefaultOptions = Options{
-		Level:    slog.LevelInfo,
-		ColorMap: DefaultColorMap,
+		Level:     slog.LevelInfo,
+		AddSource: true,
+		ColorMap:  DefaultColorMap,
 	}
 )
 
@@ -67,10 +69,12 @@ type ColorHandler struct {
 
 // Options defines configuration for customizing log level handling and mapping levels to color codes in a logger.
 // Level specifies the log level filter, determining which log messages are processed.
+// AddSource specifies whether to include the source file and line number in the log output.
 // ColorMap maps log levels to their respective color codes for enhanced readability in console output.
 type Options struct {
-	Level    slog.Leveler
-	ColorMap map[slog.Level]string
+	AddSource bool
+	Level     slog.Leveler
+	ColorMap  map[slog.Level]string
 }
 
 // New creates a new ColorHandler instance with the provided output writer and options.
@@ -91,6 +95,9 @@ func New(out io.Writer, opts *Options) *ColorHandler {
 	}
 	if ch.opts.ColorMap == nil {
 		ch.opts.ColorMap = DefaultColorMap
+	}
+	if ch.opts.AddSource {
+		ch.opts.AddSource = true
 	}
 	return ch
 }
@@ -130,11 +137,18 @@ func (c *ColorHandler) Handle(ctx context.Context, r slog.Record) error {
 	buf = append(buf, r.Message...)
 	buf = append(buf, ' ')
 	buf = append(buf, c.preformatted...)
+	//why does source not exist here?
 	r.Attrs(func(a slog.Attr) bool {
 		entry := fmt.Sprintf("%s=%s ", a.Key, a.Value)
 		buf = append(buf, entry...)
 		return true
 	})
+	if r.PC != 0 {
+		fs := runtime.CallersFrames([]uintptr{r.PC})
+		f, _ := fs.Next()
+		fileLine := fmt.Sprintf("%s:%d", f.File, f.Line)
+		buf = append(buf, fileLine...)
+	}
 	// reset the color
 	buf = append(buf, ResetColor...)
 	buf = append(buf, '\n')

@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"log/slog"
-	"math/rand/v2"
 	"os"
 	"sync"
-	"time"
 
 	"PlugsConc/internal/logger"
 	"PlugsConc/internal/worker"
@@ -18,8 +16,9 @@ func main() {
 
 	logHandler := logger.New(os.Stdout,
 		&logger.Options{
-			Level:    slog.LevelInfo,
-			ColorMap: logger.DefaultColorMap},
+			Level:     slog.LevelInfo,
+			AddSource: true,
+			ColorMap:  logger.DefaultColorMap},
 	)
 
 	slog.SetDefault(slog.New(logHandler))
@@ -47,22 +46,22 @@ func main() {
 
 	var jobsWithRetry []*worker.Job
 
-	for i := 0; i < 250000; i++ {
-		someValTheWorkerDoesNotKnow := rand.IntN(5) + 1
-		ctx := context.Background()
+	common := "With great power comes great responsibility"
+	correct := "With great power there must also come great responsibility"
 
+	for i := 0; i < 25; i++ {
+		ctx := context.Background()
 		newJob := worker.NewJob(ctx, func(ctx context.Context) (any, error) {
-			res := strutil.NewLoremSentences(someValTheWorkerDoesNotKnow)
+			res := strutil.CosineSimilarity(common, correct, 0)
 			return res, nil
-		}).WithRetry(3, 1000).
-			WithTimeout(1 * time.Second)
+		}).WithRetry(3, 1000)
 
 		jobsWithRetry = append(jobsWithRetry, newJob)
 	}
 
 	s, f, err := pool.SubmitBatch(jobsWithRetry)
 	if err != nil {
-		slog.With(slog.Int("success", s), slog.Int("failed", f), slog.Any("err", err)).Info("Finished With Err")
+		slog.With(slog.Int("submitted", s), slog.Int("failed", f), slog.Any("err", err)).Info("Batch Submission Finished")
 	}
 
 	pool.Shutdown()
@@ -71,5 +70,6 @@ func main() {
 
 	slog.With(slog.Int("success", processed),
 		slog.Int("failed", failed),
-		slog.Any("pool", pool.LogValue())).Info("Finished No Err")
+		slog.Any("pool", pool.LogValue())).Info("Finished")
+
 }
