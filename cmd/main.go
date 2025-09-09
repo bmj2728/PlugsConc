@@ -16,9 +16,10 @@ func main() {
 
 	logHandler := logger.New(os.Stdout,
 		&logger.Options{
-			Level:     slog.LevelInfo,
+			Level:     slog.LevelDebug,
 			AddSource: true,
-			ColorMap:  logger.DefaultColorMap},
+			ColorMap:  logger.DefaultColorMap,
+			FullLine:  true},
 	)
 
 	slog.SetDefault(slog.New(logHandler))

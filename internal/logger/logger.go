@@ -10,24 +10,14 @@ import (
 	"sync"
 )
 
-// InfoColor defines the ANSI color code for bright blue, typically used for informational messages.
-// DebugColor defines the ANSI color code for bright green, typically used for debug messages.
-// WarnColor defines the ANSI color code for bright yellow, typically used for warning messages.
-// ErrorColor defines the ANSI color code for red, typically used for error messages.
-const (
-	InfoColor  = "\033[1;94m" // Bright Blue
-	DebugColor = "\033[1;92m" // Bright Green
-	WarnColor  = "\033[1;93m" // Bright Yellow
-	ErrorColor = "\033[1;31m" // Red
-	ResetColor = "\033[0m"
-)
-
+// DefaultColorMap maps default log levels to ANSI color codes for styled console output.
+// DefaultOptions defines default logging settings, including log level, source inclusion, and color mapping.
 var (
-	DefaultColorMap = map[slog.Level]string{
-		slog.LevelInfo:  InfoColor,
-		slog.LevelDebug: DebugColor,
-		slog.LevelWarn:  WarnColor,
-		slog.LevelError: ErrorColor,
+	DefaultColorMap = map[slog.Level]ColorSetting{
+		slog.LevelInfo:  {BrightBlue, DefaultBackground},
+		slog.LevelDebug: {BrightGreen, DefaultBackground},
+		slog.LevelWarn:  {BrightYellow, DefaultBackground},
+		slog.LevelError: {Red, DefaultBackground},
 	}
 
 	// DefaultOptions defines the default logging configuration with an info log level and a predefined color map.
@@ -35,20 +25,14 @@ var (
 		Level:     slog.LevelInfo,
 		AddSource: true,
 		ColorMap:  DefaultColorMap,
+		FullLine:  false,
 	}
 )
 
-// NewColorMap creates a new color map with the provided color codes for each log level.
-// The color codes should be formatted as ANSI escape sequences e.g. for black "\033[1;30m"
-// The following color codes are supported:
-// 30-37(FG): Black, Red, Green, Yellow, Blue, Magenta, Cyan, White
-// 90-97(BG): Bright Black, Bright Red, Bright Green, Bright Yellow,
-// Bright Blue, Bright Magenta, Bright Cyan, Bright White
-// 40-47(FG): Black, Red, Green, Yellow, Blue, Magenta, Cyan, White
-// 100-107(BG): Bright Black, Bright Red, Bright Green, Bright Yellow,
-// Bright Blue, Bright Magenta, Bright Cyan, Bright White
-func NewColorMap(info, debug, warn, error string) map[slog.Level]string {
-	return map[slog.Level]string{
+// NewColorMap creates and returns a map that associates logging levels with their corresponding ANSI color codes.
+// Available colors are defined in the Color type.
+func NewColorMap(info, debug, warn, error ColorSetting) map[slog.Level]ColorSetting {
+	return map[slog.Level]ColorSetting{
 		slog.LevelInfo:  info,
 		slog.LevelDebug: debug,
 		slog.LevelWarn:  warn,
@@ -74,7 +58,8 @@ type ColorHandler struct {
 type Options struct {
 	AddSource bool
 	Level     slog.Leveler
-	ColorMap  map[slog.Level]string
+	ColorMap  map[slog.Level]ColorSetting
+	FullLine  bool
 }
 
 // New creates a new ColorHandler instance with the provided output writer and options.
@@ -98,6 +83,9 @@ func New(out io.Writer, opts *Options) *ColorHandler {
 	}
 	if ch.opts.AddSource {
 		ch.opts.AddSource = true
+	}
+	if ch.opts.FullLine {
+		ch.opts.FullLine = true
 	}
 	return ch
 }
@@ -123,16 +111,30 @@ func (c *ColorHandler) Handle(ctx context.Context, r slog.Record) error {
 	if !c.Enabled(ctx, r.Level) {
 		return nil
 	}
-	color := c.getColor(r.Level)
+
+	color := c.getColor(r.Level).Foreground
+	bgColor := c.getColor(r.Level).Background
+	fullLine := c.opts.FullLine
+
 	// get a buffer from the sync pool
 	buf := make([]byte, 0, 1024)
-	// set the color for the log level
-	buf = append(buf, color...)
+	// set the color for the log level if FullLine is enabled
+	if fullLine {
+		buf = append(buf, color...)
+		buf = append(buf, bgColor...)
+	}
 	if !r.Time.IsZero() {
 		buf = append(buf, r.Time.Format("2006-01-02 15:04:05")...)
 		buf = append(buf, ' ')
 	}
+	if !fullLine {
+		buf = append(buf, color...)
+		buf = append(buf, bgColor...)
+	}
 	buf = append(buf, r.Level.String()...)
+	if !fullLine {
+		buf = append(buf, ResetColor...)
+	}
 	buf = append(buf, ' ')
 	buf = append(buf, r.Message...)
 	buf = append(buf, ' ')
@@ -150,7 +152,10 @@ func (c *ColorHandler) Handle(ctx context.Context, r slog.Record) error {
 		buf = append(buf, fileLine...)
 	}
 	// reset the color
-	buf = append(buf, ResetColor...)
+	if fullLine {
+		buf = append(buf, ResetColor...)
+	}
+	buf = append(buf, ResetColor...) // for good measure
 	buf = append(buf, '\n')
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -199,7 +204,7 @@ func (c *ColorHandler) WithGroup(name string) slog.Handler {
 }
 
 // getColor retrieves the ANSI color code for the provided log level based on the configured or default color map.
-func (c *ColorHandler) getColor(level slog.Level) string {
+func (c *ColorHandler) getColor(level slog.Level) ColorSetting {
 	if c.opts.ColorMap == nil {
 		color, ok := DefaultColorMap[level]
 		if !ok {
@@ -217,10 +222,10 @@ func (c *ColorHandler) getColor(level slog.Level) string {
 
 // getDefaultColor returns the default ANSI color code for the given log level using DefaultColorMap.
 // If the level is not present in DefaultColorMap, it returns the ResetColor.
-func getDefaultColor(level slog.Level) string {
+func getDefaultColor(level slog.Level) ColorSetting {
 	color, ok := DefaultColorMap[level]
 	if !ok {
-		return ResetColor
+		return ColorSetting{Default, DefaultBackground}
 	}
 	return color
 }
