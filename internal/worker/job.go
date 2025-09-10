@@ -16,17 +16,13 @@ type WorkUnit func(ctx context.Context) (any, error)
 // Job represents a unit of work with an associated unique identifier and an executable function.
 type Job struct {
 	ID              string
-	SubmittedAt     time.Time
-	StartedAt       time.Time
-	FinishedAt      time.Time
-	Duration        time.Duration
+	Metrics         *JobMetrics
 	Execute         WorkUnit
 	Ctx             context.Context
 	Cancel          context.CancelFunc
 	CancelWithCause context.CancelCauseFunc // only available if the job was created with WithCancelCause
 	MaxRetries      int
 	RetryDelay      int
-	RetryCount      int
 }
 
 // NewJob creates and initializes a new Job instance with a unique ID and the provided execution logic.
@@ -37,6 +33,7 @@ func NewJob(ctx context.Context, execute WorkUnit) *Job {
 		ID:      uuid,
 		Execute: execute,
 		Ctx:     updatedCtx,
+		Metrics: NewJobMetrics(),
 	}
 }
 
@@ -103,51 +100,44 @@ func (j *Job) WithDeadlineCause(deadline time.Time, cause error) *Job {
 
 // SetSubmittedAt updates the job's SubmittedAt field with the current time and stores it in the job's context.
 func (j *Job) SetSubmittedAt() {
-	j.SubmittedAt = time.Now()
-	j.Ctx = context.WithValue(j.Ctx, ctxKeyJobSubmittedAt, j.SubmittedAt)
+	j.Metrics.SubmittedAt = time.Now()
+	j.Ctx = context.WithValue(j.Ctx, ctxKeyJobSubmittedAt, j.Metrics.SubmittedAt)
 }
 
 // SetStartedAt updates the Job's StartedAt timestamp and adds it to the Job's context as ctxKeyJobStartedAt.
 func (j *Job) SetStartedAt() {
-	j.StartedAt = time.Now()
+	j.Metrics.StartedAt = time.Now()
 	j.Ctx = context.WithValue(j.Ctx, ctxKeyJobStartedAt, time.Now())
 }
 
 // SetFinishedAt sets the job's `FinishedAt` time to the current time, calculates the duration, and updates the context.
 func (j *Job) SetFinishedAt() {
-	j.FinishedAt = time.Now()
+	j.Metrics.FinishedAt = time.Now()
 	j.Ctx = context.WithValue(j.Ctx, ctxKeyJobFinishedAt, time.Now())
-	j.Duration = j.FinishedAt.Sub(j.StartedAt)
-	j.Ctx = context.WithValue(j.Ctx, ctxKeyJobDuration, j.Duration)
+	j.Metrics.Duration = j.Metrics.FinishedAt.Sub(j.Metrics.StartedAt)
+	j.Ctx = context.WithValue(j.Ctx, ctxKeyJobDuration, j.Metrics.Duration)
 }
 
 // JobResult represents the outcome of an operation with its associated JobID, result value, and any error encountered.
 type JobResult struct {
-	JobID       string
-	WorkerID    int
-	Ctx         context.Context
-	SubmittedAt time.Time
-	StartedAt   time.Time
-	FinishedAt  time.Time
-	Duration    time.Duration
-	Retries     int
-	Value       any
-	Err         error
+	JobID    string
+	WorkerID int
+	Ctx      context.Context
+	Metrics  *JobMetrics
+	Value    any
+	Err      error
 }
 
 // NewJobResult creates and returns a pointer to a JobResult containing the provided jobID, value, and error.
 func NewJobResult(job *Job, workerID int, value any, err error) *JobResult {
+	metrics := *job.Metrics
 	return &JobResult{
-		JobID:       job.ID,
-		WorkerID:    workerID,
-		Ctx:         job.Ctx,
-		SubmittedAt: job.SubmittedAt,
-		StartedAt:   job.StartedAt,
-		FinishedAt:  job.FinishedAt,
-		Duration:    job.Duration,
-		Retries:     job.RetryCount,
-		Value:       value,
-		Err:         err,
+		JobID:    job.ID,
+		WorkerID: workerID,
+		Ctx:      job.Ctx,
+		Metrics:  &metrics,
+		Value:    value,
+		Err:      err,
 	}
 }
 
@@ -156,12 +146,7 @@ func (j *Job) LogValue() slog.Value {
 	return slog.GroupValue(slog.String(logger.KeyJobID, j.ID),
 		slog.Int(logger.KeyMaxRetries, j.MaxRetries),
 		slog.Int(logger.KeyRetryDelay, j.RetryDelay),
-		slog.Int(logger.KeyRetryCount, j.RetryCount),
-		slog.Time(logger.KeyJobSubmittedAt, j.SubmittedAt),
-		slog.Time(logger.KeyJobStartedAt, j.StartedAt),
-		slog.Time(logger.KeyJobFinishedAt, j.FinishedAt),
-		slog.Duration(logger.KeyJobDuration, j.Duration),
-	)
+		slog.Any(logger.KeyJobMetrics, j.Metrics.LogValue()))
 }
 
 // LogValue returns a structured slog.Value containing detailed information about the job,
@@ -169,11 +154,7 @@ func (j *Job) LogValue() slog.Value {
 func (jr *JobResult) LogValue() slog.Value {
 	return slog.GroupValue(slog.String(logger.KeyJobID, jr.JobID),
 		slog.Int(logger.KeyWorkerID, jr.WorkerID),
-		slog.Time(logger.KeyJobSubmittedAt, jr.SubmittedAt),
-		slog.Time(logger.KeyJobStartedAt, jr.StartedAt),
-		slog.Time(logger.KeyJobFinishedAt, jr.FinishedAt),
-		slog.Duration(logger.KeyJobDuration, jr.Duration),
-		slog.Int(logger.KeyRetryCount, jr.Retries),
-		slog.Any("value", jr.Value),
-		slog.Any("error", jr.Err))
+		slog.Any(logger.KeyJobValue, jr.Value),
+		slog.Any(logger.KeyJobError, jr.Err),
+		slog.Any(logger.KeyJobMetrics, jr.Metrics.LogValue()))
 }

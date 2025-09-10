@@ -170,3 +170,52 @@ func (pm *PoolMetrics) LogValue() slog.Value {
 		slog.Float64(logger.KeyPoolDuration, pm.duration.Seconds()))
 	return metrics
 }
+
+// JobMetrics represents the timing and retry metrics of a job including submission, start, finish times, and attempts.
+type JobMetrics struct {
+	SubmittedAt time.Time
+	StartedAt   time.Time
+	FinishedAt  time.Time
+	Duration    time.Duration
+	Attempts    int
+}
+
+// NewJobMetrics initializes and returns a new instance of JobMetrics with default zero values for its fields.
+func NewJobMetrics() *JobMetrics {
+	return &JobMetrics{}
+}
+
+// LogValue assembles job metrics into a structured slog.Value for logging, including timestamps, duration,
+// and retry count.
+func (jm *JobMetrics) LogValue() slog.Value {
+	return slog.GroupValue(slog.Time(logger.KeyJobSubmittedAt, jm.SubmittedAt),
+		slog.Time(logger.KeyJobStartedAt, jm.StartedAt),
+		slog.Time(logger.KeyJobFinishedAt, jm.FinishedAt),
+		slog.Float64(logger.KeyJobDuration, jm.Duration.Seconds()),
+		slog.Int(logger.KeyRetryCount, jm.Attempts))
+}
+
+// GetSubmittedAt returns the time when the job was submitted.
+func (jm *JobMetrics) GetSubmittedAt() time.Time {
+	return jm.SubmittedAt
+}
+
+// GetStartedAt retrieves the timestamp when the job was started.
+func (jm *JobMetrics) GetStartedAt() time.Time {
+	return jm.StartedAt
+}
+
+// GetFinishedAt returns the time when the job was completed.
+func (jm *JobMetrics) GetFinishedAt() time.Time {
+	return jm.FinishedAt
+}
+
+// GetDuration returns the total duration of the job.
+func (jm *JobMetrics) GetDuration() time.Duration {
+	return jm.Duration
+}
+
+// GetAttempts returns the total number of attempts made for the job.
+func (jm *JobMetrics) GetAttempts() int {
+	return jm.Attempts
+}

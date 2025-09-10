@@ -45,4 +45,11 @@ const (
 	KeyWorkerID = "worker_id"
 	// KeyBatchErrors represents the logging key for storing or referencing batch error information.
 	KeyBatchErrors = "batch_errors"
+	// KeyJobMetrics represents the identifier key for job-related metrics in the system.
+	KeyJobMetrics = "job_metrics"
+	// KeyJobValue represents the value associated with a specific job in the job processing system.
+	KeyJobValue = "job_value"
+	// KeyJobError represents the key used to record or identify errors associated
+	// with a specific job during processing.
+	KeyJobError = "job_error"
 )

@@ -70,8 +70,8 @@ func (w *Worker) Start() {
 
 				// retry loop
 				delay := time.Duration(job.RetryDelay) * time.Millisecond
-				for attempt := 0; ; attempt++ {
-					job.RetryCount = attempt
+				for attempts := 0; ; attempts++ {
+					job.Metrics.Attempts = attempts
 
 					// if the job context is canceled, return immediately
 					//  the default case is to continue the loop
@@ -86,7 +86,7 @@ func (w *Worker) Start() {
 					v, e := job.Execute(job.Ctx)
 					// if the job succeeded, or we've reached the max retries, return the result/error
 					//  otherwise, retry the job with a delay between retries'
-					if e == nil || attempt >= job.MaxRetries {
+					if e == nil || attempts >= job.MaxRetries {
 						job.SetFinishedAt()
 						return v, e
 					}
@@ -95,7 +95,7 @@ func (w *Worker) Start() {
 					slog.With(
 						slogWorkerID,
 						slog.String(logger.KeyJobID, job.ID),
-						slog.Int(logger.KeyRetryCount, attempt+1),
+						slog.Int(logger.KeyRetryCount, attempts+1),
 					).Warn("Retrying job")
 
 					// wait for the retry delay before continuing the loop
