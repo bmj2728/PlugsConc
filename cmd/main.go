@@ -50,7 +50,7 @@ func main() {
 	//common := "With great power comes great responsibility"
 	correct := "With great power there must also come great responsibility"
 
-	for i := 0; i < 25000000; i++ {
+	for i := 0; i < 250; i++ {
 		ctx := context.Background()
 		newJob := worker.NewJob(ctx, func(ctx context.Context) (any, error) {
 			res := strutil.Slugify(correct, 50)

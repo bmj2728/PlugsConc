@@ -43,4 +43,6 @@ const (
 	KeyPoolMetrics = "pool_metrics"
 	// KeyWorkerID is a constant key used to associate a worker's unique ID with context or logging operations.
 	KeyWorkerID = "worker_id"
+	// KeyBatchErrors represents the logging key for storing or referencing batch error information.
+	KeyBatchErrors = "batch_errors"
 )

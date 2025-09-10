@@ -2,7 +2,9 @@ package worker
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,6 +18,23 @@ var ErrPoolClosed = errors.New("worker pool is closed")
 // MetricResult represents the outcome of a job
 type MetricResult struct {
 	isSuccess bool
+}
+type BatchErrors map[string]error
+
+func (b BatchErrors) Add(jobID string, err error) BatchErrors {
+	b[jobID] = err
+	return b
+}
+
+func (b BatchErrors) LogValue() slog.Value {
+	var formatted strings.Builder
+	formatted.WriteString("Batch Errors:\n")
+	for j, e := range b {
+		entry := fmt.Sprintf("%s: %s", j, e.Error())
+		formatted.WriteString(entry)
+	}
+	batchGroup := slog.GroupValue(slog.String(logger.KeyBatchErrors, formatted.String()))
+	return batchGroup
 }
 
 // NewMetricResult creates and returns a new MetricResult with the given success status.
@@ -100,21 +119,21 @@ func (p *Pool) Submit(job *Job) (err error) {
 }
 
 // SubmitBatch processes a batch of jobs, submitting each to the pool and tracking the number of successes and failures.
-func (p *Pool) SubmitBatch(jobs []*Job) (int, int, error) {
+func (p *Pool) SubmitBatch(jobs []*Job) (int, int, BatchErrors) {
 	submitted := 0
 	failures := 0
-	var errs error
+	var errorMap BatchErrors
 	for _, job := range jobs {
 		err := p.Submit(job)
 		if err != nil {
 			failures++
 			slog.With(slog.String(logger.KeyJobID, job.ID)).Warn("Job failed", slog.Any("error", err))
-			errs = errors.Join(errs, err)
+			errorMap.Add(job.ID, err)
 		} else {
 			submitted++
 		}
 	}
-	return submitted, failures, errs
+	return submitted, failures, errorMap
 }
 
 // Shutdown gracefully stops the worker pool, ensuring all submitted jobs are completed and resources are released.
