@@ -33,17 +33,22 @@ type Worker struct {
 	id      int
 	jobs    <-chan *Job
 	results chan<- *JobResult
+	metrics chan<- *MetricResult
 	quit    chan struct{}
 }
 
 // NewWorker creates and initializes a new Worker with a unique ID, a channel of jobs to process,
 // and a results channel.
-func NewWorker(id int, jobs <-chan *Job, results chan<- *JobResult, quit chan struct{}) *Worker {
+func NewWorker(id int, jobs <-chan *Job,
+	results chan<- *JobResult,
+	quit chan struct{},
+	metrics chan<- *MetricResult) *Worker {
 	return &Worker{
 		id:      id,
 		jobs:    jobs,
 		results: results,
 		quit:    quit,
+		metrics: metrics,
 	}
 }
 
@@ -77,7 +82,7 @@ func (w *Worker) Start() {
 				// panic safety: convert panics to errors
 				defer func() {
 					if r := recover(); r != nil {
-						err = fmt.Errorf("panic: %v\nstack: %s\n", r, string(debug.Stack()))
+						err = fmt.Errorf("panic: %v\nstack: %s", r, string(debug.Stack()))
 					}
 				}()
 
@@ -130,6 +135,7 @@ func (w *Worker) Start() {
 			// Safely send the result or quit if the pool is terminated.
 			select {
 			case w.results <- NewJobResult(job, w.id, resultVal, err):
+				w.metrics <- NewMetricResult(err == nil)
 				// Result sent successfully.
 			case <-w.quit:
 				// Pool was terminated while trying to send the result.
