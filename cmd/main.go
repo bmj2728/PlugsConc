@@ -62,7 +62,8 @@ func main() {
 
 	s, f, err := pool.SubmitBatch(jobsWithRetry)
 	if err != nil {
-		slog.With(slog.Int("submitted", s), slog.Int("failed", f), slog.Any("err", err)).Info("Batch Submission Finished")
+		slog.With(slog.Int("submitted", s), slog.Int("failed", f),
+			slog.Any("err", err.LogValue())).Info("Batch Submission Finished")
 	}
 
 	pool.Shutdown()

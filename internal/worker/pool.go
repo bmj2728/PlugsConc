@@ -28,9 +28,12 @@ func (b BatchErrors) Add(jobID string, err error) BatchErrors {
 
 func (b BatchErrors) LogValue() slog.Value {
 	var formatted strings.Builder
+	if len(b) == 0 {
+		return slog.AnyValue("")
+	}
 	formatted.WriteString("Batch Errors:\n")
 	for j, e := range b {
-		entry := fmt.Sprintf("%s: %s", j, e.Error())
+		entry := fmt.Sprintf("%s: %s\n", j, e.Error())
 		formatted.WriteString(entry)
 	}
 	batchGroup := slog.GroupValue(slog.String(logger.KeyBatchErrors, formatted.String()))
