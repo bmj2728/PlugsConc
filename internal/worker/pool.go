@@ -15,17 +15,21 @@ import (
 // ErrPoolClosed indicates that the worker pool has been closed and cannot accept any new jobs.
 var ErrPoolClosed = errors.New("worker pool is closed")
 
-// MetricResult represents the outcome of a job
+// MetricResult represents the outcome of a metric evaluation with its success status.
 type MetricResult struct {
 	isSuccess bool
 }
+
+// BatchErrors is a map that associates job IDs with their corresponding error objects if errors occur during execution.
 type BatchErrors map[string]error
 
+// Add adds a new error to the BatchErrors map for the given jobID and returns the updated BatchErrors instance.
 func (b BatchErrors) Add(jobID string, err error) BatchErrors {
 	b[jobID] = err
 	return b
 }
 
+// LogValue formats and returns batch error details as a structured logging value
 func (b BatchErrors) LogValue() slog.Value {
 	var formatted strings.Builder
 	if len(b) == 0 {
@@ -206,6 +210,7 @@ func (p *Pool) StoppedAt() time.Time {
 	return p.metrics.Stopped()
 }
 
+// CompletedAt returns the timestamp when the pool completed its execution, as tracked by the pool's metrics.
 func (p *Pool) CompletedAt() time.Time {
 	return p.metrics.Completed()
 }

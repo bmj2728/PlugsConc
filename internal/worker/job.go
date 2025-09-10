@@ -128,14 +128,13 @@ type JobResult struct {
 	Err      error
 }
 
-// NewJobResult creates and returns a pointer to a JobResult containing the provided jobID, value, and error.
+// NewJobResult creates a new JobResult instance, copying the job's metrics and associating it with a specific worker.
 func NewJobResult(job *Job, workerID int, value any, err error) *JobResult {
-	metrics := *job.Metrics
 	return &JobResult{
 		JobID:    job.ID,
 		WorkerID: workerID,
 		Ctx:      job.Ctx,
-		Metrics:  &metrics,
+		Metrics:  job.Metrics,
 		Value:    value,
 		Err:      err,
 	}
