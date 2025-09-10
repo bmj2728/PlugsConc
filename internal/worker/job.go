@@ -5,69 +5,9 @@ import (
 	"log/slog"
 	"time"
 
+	"PlugsConc/internal/logger"
+
 	"github.com/bmj2728/utils/pkg/strutil"
-)
-
-// ctxKey is a custom string-based type used as keys for storing and retrieving values in context.
-type ctxKey string
-
-// ctxKeyJobID is the context key for storing or retrieving a unique job identifier.
-// ctxKeyMaxRetries is the context key for storing or retrieving the maximum allowed retries for a job.
-// ctxKeyRetryDelay is the context key for storing or retrieving the delay duration before retrying a job.
-// ctxKeyRetryCount is the context key for storing or retrieving the current retry count of a job.
-// ctxKeyJobSubmittedAt is the context key for storing or retrieving the job submission timestamp.
-// ctxKeyJobStartedAt is the context key for storing or retrieving the job start timestamp.
-// ctxKeyJobFinishedAt is the context key for storing or retrieving the job completion timestamp.
-// ctxKeyJobDuration is the context key for storing or retrieving the job's total execution duration in seconds.
-const (
-	ctxKeyJobID          = ctxKey(KeyJobID)
-	ctxKeyMaxRetries     = ctxKey(KeyMaxRetries)
-	ctxKeyRetryDelay     = ctxKey(KeyRetryDelay)
-	ctxKeyRetryCount     = ctxKey(KeyRetryCount)
-	ctxKeyJobSubmittedAt = ctxKey(KeyJobSubmittedAt)
-	ctxKeyJobStartedAt   = ctxKey(KeyJobStartedAt)
-	ctxKeyJobFinishedAt  = ctxKey(KeyJobFinishedAt)
-	ctxKeyJobDuration    = ctxKey(KeyJobDuration)
-)
-
-// WithJobID returns a copy of the parent context with the specified job ID added as a value.
-func WithJobID(parent context.Context, id string) context.Context {
-	return context.WithValue(parent, ctxKeyJobID, id)
-}
-
-// JobIDFromContext retrieves the job ID from the given context. It assumes the context contains a value for
-// the "job_id" key.
-//func JobIDFromContext(ctx context.Context) string {
-//	return ctx.Value(ctxKeyJobID).(string)
-//}
-
-const (
-
-	// KeyJobID is the constant key used to represent a unique identifier for a job in operations and logging.
-	KeyJobID = "job_id"
-
-	// KeyMaxRetries represents the maximum number of retry attempts for a job in case of failure.
-	KeyMaxRetries = "max_retries"
-
-	// KeyRetryDelay represents the key used to identify the retry delay duration for a job in context
-	// or logging operations.
-	KeyRetryDelay = "retry_delay"
-
-	// KeyRetryCount represents the constant key for tracking the number of retries a job has undergone.
-	KeyRetryCount = "retry_count"
-
-	// KeyJobSubmittedAt is a constant key representing the timestamp when a job was submitted.
-	KeyJobSubmittedAt = "submitted_at"
-
-	// KeyJobStartedAt is a constant key used to store or retrieve the timestamp of when a job started from a context.
-	KeyJobStartedAt = "started_at"
-
-	// KeyJobFinishedAt is a constant key used to store or retrieve the job's completion time in context or logs.
-	KeyJobFinishedAt = "finished_at"
-
-	// KeyJobDuration is a constant key representing the duration of a job in seconds, used for context
-	// or logging operations.
-	KeyJobDuration = "job_duration_seconds"
 )
 
 // WorkUnit defines a function type that performs a unit of work and returns a value of any type.
@@ -213,27 +153,27 @@ func NewJobResult(job *Job, workerID int, value any, err error) *JobResult {
 
 // LogValue returns a structured slog.Value representing key metadata and timing information for the Job.
 func (j *Job) LogValue() slog.Value {
-	return slog.GroupValue(slog.String(KeyJobID, j.ID),
-		slog.Int(KeyMaxRetries, j.MaxRetries),
-		slog.Int(KeyRetryDelay, j.RetryDelay),
-		slog.Int(KeyRetryCount, j.RetryCount),
-		slog.Time(KeyJobSubmittedAt, j.SubmittedAt),
-		slog.Time(KeyJobStartedAt, j.StartedAt),
-		slog.Time(KeyJobFinishedAt, j.FinishedAt),
-		slog.Duration(KeyJobDuration, j.Duration),
+	return slog.GroupValue(slog.String(logger.KeyJobID, j.ID),
+		slog.Int(logger.KeyMaxRetries, j.MaxRetries),
+		slog.Int(logger.KeyRetryDelay, j.RetryDelay),
+		slog.Int(logger.KeyRetryCount, j.RetryCount),
+		slog.Time(logger.KeyJobSubmittedAt, j.SubmittedAt),
+		slog.Time(logger.KeyJobStartedAt, j.StartedAt),
+		slog.Time(logger.KeyJobFinishedAt, j.FinishedAt),
+		slog.Duration(logger.KeyJobDuration, j.Duration),
 	)
 }
 
 // LogValue returns a structured slog.Value containing detailed information about the job,
 // such as timestamps and results.
 func (jr *JobResult) LogValue() slog.Value {
-	return slog.GroupValue(slog.String(KeyJobID, jr.JobID),
-		slog.Int(KeyWorkerID, jr.WorkerID),
-		slog.Time(KeyJobSubmittedAt, jr.SubmittedAt),
-		slog.Time(KeyJobStartedAt, jr.StartedAt),
-		slog.Time(KeyJobFinishedAt, jr.FinishedAt),
-		slog.Duration(KeyJobDuration, jr.Duration),
-		slog.Int(KeyRetryCount, jr.Retries),
+	return slog.GroupValue(slog.String(logger.KeyJobID, jr.JobID),
+		slog.Int(logger.KeyWorkerID, jr.WorkerID),
+		slog.Time(logger.KeyJobSubmittedAt, jr.SubmittedAt),
+		slog.Time(logger.KeyJobStartedAt, jr.StartedAt),
+		slog.Time(logger.KeyJobFinishedAt, jr.FinishedAt),
+		slog.Duration(logger.KeyJobDuration, jr.Duration),
+		slog.Int(logger.KeyRetryCount, jr.Retries),
 		slog.Any("value", jr.Value),
 		slog.Any("error", jr.Err))
 }

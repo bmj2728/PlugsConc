@@ -1,32 +1,13 @@
 package worker
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"runtime/debug"
 	"time"
+
+	"PlugsConc/internal/logger"
 )
-
-// ctxKeyWorkerID is the context key used to store and retrieve the worker ID from a context.
-const (
-	ctxKeyWorkerID = ctxKey("worker_id")
-)
-
-// KeyWorkerID is a constant key used to associate a worker's unique ID with context or logging operations.
-const (
-	KeyWorkerID = "worker_id"
-)
-
-// WithWorkerID returns a new context based on the parent context with the worker ID stored as a value.
-func WithWorkerID(parent context.Context, id int) context.Context {
-	return context.WithValue(parent, ctxKeyWorkerID, id)
-}
-
-//// WorkerIDFromContext extracts the worker ID as an integer from the given context.
-//func WorkerIDFromContext(ctx context.Context) int {
-//	return ctx.Value(ctxKeyWorkerID).(int)
-//}
 
 // Worker represents a worker that processes jobs from the jobs channel and sends results
 // to the results channel.
@@ -56,7 +37,7 @@ func NewWorker(id int, jobs <-chan *Job,
 // Start begins the worker's execution loop, processing jobs from the channel and sending results
 // to the results channel.
 func (w *Worker) Start() {
-	slogWorkerID := slog.Int(KeyWorkerID, w.id)
+	slogWorkerID := slog.Int(logger.KeyWorkerID, w.id)
 	slog.With(slogWorkerID).Debug("Worker started")
 	defer slog.With(slogWorkerID).Debug("Worker stopped")
 
@@ -113,8 +94,8 @@ func (w *Worker) Start() {
 					// log retry
 					slog.With(
 						slogWorkerID,
-						slog.String(KeyJobID, job.ID),
-						slog.Int(KeyRetryCount, attempt+1),
+						slog.String(logger.KeyJobID, job.ID),
+						slog.Int(logger.KeyRetryCount, attempt+1),
 					).Warn("Retrying job")
 
 					// wait for the retry delay before continuing the loop
@@ -146,7 +127,7 @@ func (w *Worker) Start() {
 				return
 			}
 
-			attrs := []any{slogWorkerID, slog.String(KeyJobID, job.ID)}
+			attrs := []any{slogWorkerID, slog.String(logger.KeyJobID, job.ID)}
 			if err != nil {
 				slog.With(attrs...).Error("Job failed", slog.Any("error", err))
 			} else {

@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	"PlugsConc/internal/logger"
 )
 
 // ErrNoStart indicates that a required start time is missing.
@@ -158,13 +160,13 @@ func (pm *PoolMetrics) RecordFailedJob() {
 func (pm *PoolMetrics) LogValue() slog.Value {
 	pm.mu.RLock()
 	defer pm.mu.RUnlock()
-	metrics := slog.GroupValue(slog.Int(KeySubmittedJobs, pm.submissions),
-		slog.Int(KeyFailedSubmissions, pm.failed),
-		slog.Int(KeySuccessfulJobs, pm.succeeded),
-		slog.Int(KeyFailedJobs, pm.failed),
-		slog.Time(KeyPoolStartedAt, pm.startedAt),
-		slog.Time(KeyPoolStoppedAt, pm.stoppedAt),
-		slog.Time(KeyPoolCompletedAt, pm.completedAt),
-		slog.Float64(KeyPoolDuration, pm.duration.Seconds()))
+	metrics := slog.GroupValue(slog.Int(logger.KeySubmittedJobs, pm.submissions),
+		slog.Int(logger.KeyFailedSubmissions, pm.failed),
+		slog.Int(logger.KeySuccessfulJobs, pm.succeeded),
+		slog.Int(logger.KeyFailedJobs, pm.failed),
+		slog.Time(logger.KeyPoolStartedAt, pm.startedAt),
+		slog.Time(logger.KeyPoolStoppedAt, pm.stoppedAt),
+		slog.Time(logger.KeyPoolCompletedAt, pm.completedAt),
+		slog.Float64(logger.KeyPoolDuration, pm.duration.Seconds()))
 	return metrics
 }

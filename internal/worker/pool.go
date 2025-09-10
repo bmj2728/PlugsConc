@@ -6,60 +6,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"PlugsConc/internal/logger"
 )
 
 // ErrPoolClosed indicates that the worker pool has been closed and cannot accept any new jobs.
 var ErrPoolClosed = errors.New("worker pool is closed")
-
-// ctxKeyWorkerCount is a context key for tracking the number of workers in a pool.
-// ctxKeySubmittedJobs is a context key for tracking the total number of submitted jobs.
-// ctxKeyFailedSubmissions is a context key for tracking the count of job submission failures.
-// ctxKeyPoolStartedAt is a context key for storing the pool's start time.
-// ctxKeyPoolStoppedAt is a context key for storing the pool's stop time.
-// ctxKeyPoolCompletedAt is a context key for storing the pool's completion time.
-// ctxKeyPoolDuration is a context key for tracking the total duration the pool was active.
-// ctxKeyPoolClosed is a context key for indicating whether the pool has been closed.
-// ctxKeySuccessfulJobs is a context key for tracking the number of successfully completed jobs.
-// ctxKeyFailedJobs is a context key for tracking the number of failed jobs.
-// ctxKeySPoolMetrics is a context key for storing the pool's metrics data.
-const (
-	ctxKeyWorkerCount       = ctxKey(KeyWorkerCount)
-	ctxKeySubmittedJobs     = ctxKey(KeySubmittedJobs)
-	ctxKeyFailedSubmissions = ctxKey(KeyFailedSubmissions)
-	ctxKeyPoolStartedAt     = ctxKey(KeyPoolStartedAt)
-	ctxKeyPoolStoppedAt     = ctxKey(KeyPoolStoppedAt)
-	ctxKeyPoolCompletedAt   = ctxKey(KeyPoolCompletedAt)
-	ctxKeyPoolDuration      = ctxKey(KeyPoolDuration)
-	ctxKeyPoolClosed        = ctxKey(KeyPoolClosed)
-	ctxKeySuccessfulJobs    = ctxKey(KeySuccessfulJobs)
-	ctxKeyFailedJobs        = ctxKey(KeyFailedJobs)
-	ctxKeySPoolMetrics      = ctxKey(KeyPoolMetrics)
-)
-
-// KeyWorkerCount denotes the number of workers in the pool.
-// KeySubmittedJobs represents the total number of jobs submitted to the pool.
-// KeyFailedSubmissions indicates the count of job submissions that failed.
-// KeyPoolStartedAt records the timestamp when the pool was started.
-// KeyPoolStoppedAt holds the timestamp when the pool was stopped.
-// KeyPoolCompletedAt captures the timestamp when the pool completed processing.
-// KeyPoolDuration refers to the total duration of the pool's operation in seconds.
-// KeyPoolClosed signifies whether the pool has been closed.
-// KeySuccessfulJobs represents the number of successfully processed jobs.
-// KeyFailedJobs indicates the count of jobs that failed during processing.
-// KeyPoolMetrics provides the metrics collected for the pool.
-const (
-	KeyWorkerCount       = "worker_count"
-	KeySubmittedJobs     = "jobs_submitted"
-	KeyFailedSubmissions = "failed_submissions"
-	KeyPoolStartedAt     = "pool_started_at"
-	KeyPoolStoppedAt     = "pool_stopped_at"
-	KeyPoolCompletedAt   = "pool_completed_at"
-	KeyPoolDuration      = "pool_duration_seconds"
-	KeyPoolClosed        = "pool_closed"
-	KeySuccessfulJobs    = "successful_jobs"
-	KeyFailedJobs        = "failed_jobs"
-	KeyPoolMetrics       = "pool_metrics"
-)
 
 // MetricResult represents the outcome of a job
 type MetricResult struct {
@@ -139,7 +91,7 @@ func (p *Pool) Submit(job *Job) (err error) {
 		if r := recover(); r != nil {
 			err = ErrPoolClosed
 			p.metrics.RecordFailedSubmission()
-			slog.With(slog.String(KeyJobID, job.ID)).Warn("Job queue closed, job not submitted")
+			slog.With(slog.String(logger.KeyJobID, job.ID)).Warn("Job queue closed, job not submitted")
 		}
 	}()
 	p.jobs <- job
@@ -156,7 +108,7 @@ func (p *Pool) SubmitBatch(jobs []*Job) (int, int, error) {
 		err := p.Submit(job)
 		if err != nil {
 			failures++
-			slog.With(slog.String(KeyJobID, job.ID)).Warn("Job failed", slog.Any("error", err))
+			slog.With(slog.String(logger.KeyJobID, job.ID)).Warn("Job failed", slog.Any("error", err))
 			errs = errors.Join(errs, err)
 		} else {
 			submitted++
@@ -264,9 +216,9 @@ func (p *Pool) Metrics() *PoolMetrics {
 // LogValue generates a structured log representation of the pool's state, including its closed status,
 // worker count, and metrics.
 func (p *Pool) LogValue() slog.Value {
-	return slog.GroupValue(slog.Bool(KeyPoolClosed, p.closed.Load()),
-		slog.Int(KeyWorkerCount, p.maxWorkers),
-		slog.Any(KeyPoolMetrics, p.metrics.LogValue()),
+	return slog.GroupValue(slog.Bool(logger.KeyPoolClosed, p.closed.Load()),
+		slog.Int(logger.KeyWorkerCount, p.maxWorkers),
+		slog.Any(logger.KeyPoolMetrics, p.metrics.LogValue()),
 	)
 }
 
