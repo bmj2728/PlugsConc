@@ -8,8 +8,20 @@ import (
 	"time"
 )
 
+// ErrPoolClosed indicates that the worker pool has been closed and cannot accept any new jobs.
 var ErrPoolClosed = errors.New("worker pool is closed")
 
+// ctxKeyWorkerCount is a context key for tracking the number of workers in a pool.
+// ctxKeySubmittedJobs is a context key for tracking the total number of submitted jobs.
+// ctxKeyFailedSubmissions is a context key for tracking the count of job submission failures.
+// ctxKeyPoolStartedAt is a context key for storing the pool's start time.
+// ctxKeyPoolStoppedAt is a context key for storing the pool's stop time.
+// ctxKeyPoolCompletedAt is a context key for storing the pool's completion time.
+// ctxKeyPoolDuration is a context key for tracking the total duration the pool was active.
+// ctxKeyPoolClosed is a context key for indicating whether the pool has been closed.
+// ctxKeySuccessfulJobs is a context key for tracking the number of successfully completed jobs.
+// ctxKeyFailedJobs is a context key for tracking the number of failed jobs.
+// ctxKeySPoolMetrics is a context key for storing the pool's metrics data.
 const (
 	ctxKeyWorkerCount       = ctxKey(KeyWorkerCount)
 	ctxKeySubmittedJobs     = ctxKey(KeySubmittedJobs)
@@ -24,6 +36,17 @@ const (
 	ctxKeySPoolMetrics      = ctxKey(KeyPoolMetrics)
 )
 
+// KeyWorkerCount denotes the number of workers in the pool.
+// KeySubmittedJobs represents the total number of jobs submitted to the pool.
+// KeyFailedSubmissions indicates the count of job submissions that failed.
+// KeyPoolStartedAt records the timestamp when the pool was started.
+// KeyPoolStoppedAt holds the timestamp when the pool was stopped.
+// KeyPoolCompletedAt captures the timestamp when the pool completed processing.
+// KeyPoolDuration refers to the total duration of the pool's operation in seconds.
+// KeyPoolClosed signifies whether the pool has been closed.
+// KeySuccessfulJobs represents the number of successfully processed jobs.
+// KeyFailedJobs indicates the count of jobs that failed during processing.
+// KeyPoolMetrics provides the metrics collected for the pool.
 const (
 	KeyWorkerCount       = "worker_count"
 	KeySubmittedJobs     = "jobs_submitted"
@@ -38,17 +61,19 @@ const (
 	KeyPoolMetrics       = "pool_metrics"
 )
 
+// MetricResult represents the outcome of a job
 type MetricResult struct {
 	isSuccess bool
 }
 
+// NewMetricResult creates and returns a new MetricResult with the given success status.
 func NewMetricResult(isSuccess bool) *MetricResult {
 	return &MetricResult{
 		isSuccess: isSuccess,
 	}
 }
 
-// Pool represents a worker pool that processes jobs concurrently with a fixed number of workers.
+// Pool represents a worker pool used to manage the execution of concurrent jobs.
 type Pool struct {
 	maxWorkers     int                // workers count
 	jobs           chan *Job          // for incoming jobs
@@ -60,8 +85,7 @@ type Pool struct {
 	metrics        *PoolMetrics       // pool metrics
 }
 
-// NewPool creates and initializes a new Pool with the specified number of workers
-// and an optional buffer size for channels.
+// NewPool initializes a new Pool with the specified number of workers and a buffer size for its channels.
 func NewPool(maxWorkers int, buffer int) *Pool {
 	if maxWorkers < 1 {
 		maxWorkers = 1
@@ -91,7 +115,7 @@ func NewPool(maxWorkers int, buffer int) *Pool {
 	}
 }
 
-// Run initializes and starts all workers in the pool, ensuring they are ready to process jobs concurrently.
+// Run starts the worker pool and initializes the configured number of worker goroutines to process jobs concurrently.
 func (p *Pool) Run() {
 	p.metrics.SetStarted()
 	go p.collectMetrics()
@@ -105,7 +129,7 @@ func (p *Pool) Run() {
 	}
 }
 
-// Submit adds a job to the pool's job queue.
+// Submit schedules a Job for execution in the Pool; returns an error if the Pool is closed or the submission fails.
 func (p *Pool) Submit(job *Job) (err error) {
 	job.SetSubmittedAt()
 	if p.closed.Load() {
@@ -123,7 +147,7 @@ func (p *Pool) Submit(job *Job) (err error) {
 	return nil
 }
 
-// SubmitBatch submits a batch of jobs to the worker pool for processing.
+// SubmitBatch processes a batch of jobs, submitting each to the pool and tracking the number of successes and failures.
 func (p *Pool) SubmitBatch(jobs []*Job) (int, int, error) {
 	submitted := 0
 	failures := 0
@@ -141,8 +165,7 @@ func (p *Pool) SubmitBatch(jobs []*Job) (int, int, error) {
 	return submitted, failures, errs
 }
 
-// Shutdown gracefully stops the pool by closing the job queue, waiting for workers to complete,
-// and closing the results channel.
+// Shutdown gracefully stops the worker pool, ensuring all submitted jobs are completed and resources are released.
 func (p *Pool) Shutdown() {
 	if p.closed.CompareAndSwap(false, true) {
 		p.metrics.SetStopped()
@@ -158,8 +181,7 @@ func (p *Pool) Shutdown() {
 	}
 }
 
-// Stop gracefully stops the worker pool by closing the job queue and waiting for all workers to finish their tasks.
-// Allows for manual control over result retrieval.
+// Stop gracefully shuts down the pool by marking it as closed, waiting for workers to finish, and finalizing metrics.
 func (p *Pool) Stop() {
 	if p.closed.CompareAndSwap(false, true) {
 		p.metrics.SetStopped()
@@ -173,7 +195,8 @@ func (p *Pool) Stop() {
 	}
 }
 
-// Terminate signals the worker pool to terminate all workers immediately.
+// Terminate gracefully stops the pool execution by closing all channels and setting metrics,
+// canceling ongoing work immediately.
 func (p *Pool) Terminate() {
 	if p.closed.CompareAndSwap(false, true) {
 		p.metrics.SetStopped()
@@ -189,19 +212,22 @@ func (p *Pool) Terminate() {
 	}
 }
 
-// Results returns a read-only channel to retrieve processed job results from the worker pool.
+// Results returns a channel from which completed job results can be received.
 func (p *Pool) Results() <-chan *JobResult {
 	return p.results
 }
 
+// Duration returns the total duration for which the pool has been active, as tracked by its metrics.
 func (p *Pool) Duration() time.Duration {
 	return p.metrics.Duration()
 }
 
+// StartedAt returns the timestamp when the pool was started by accessing the started time from the pool's metrics.
 func (p *Pool) StartedAt() time.Time {
 	return p.metrics.Started()
 }
 
+// StoppedAt returns the timestamp when the pool was stopped, as recorded in the pool's metrics.
 func (p *Pool) StoppedAt() time.Time {
 	return p.metrics.Stopped()
 }
@@ -210,6 +236,33 @@ func (p *Pool) CompletedAt() time.Time {
 	return p.metrics.Completed()
 }
 
+// Workers returns the maximum number of workers configured for the pool.
+func (p *Pool) Workers() int {
+	return p.maxWorkers
+}
+
+// Metrics returns a copy of the current pool metrics, providing a snapshot of important runtime statistics.
+func (p *Pool) Metrics() *PoolMetrics {
+	// create a new struct to copy into
+	mCopy := NewPoolMetrics()
+	// lock the existing until complete
+	p.metrics.mu.Lock()
+	defer p.metrics.mu.Unlock()
+	// copy data
+	mCopy.startedAt = p.metrics.startedAt
+	mCopy.stoppedAt = p.metrics.stoppedAt
+	mCopy.completedAt = p.metrics.completedAt
+	mCopy.duration = p.metrics.duration
+	mCopy.submissions = p.metrics.submissions
+	mCopy.submissionFailures = p.metrics.submissionFailures
+	mCopy.succeeded = p.metrics.succeeded
+	mCopy.failed = p.metrics.failed
+	//return copy
+	return mCopy
+}
+
+// LogValue generates a structured log representation of the pool's state, including its closed status,
+// worker count, and metrics.
 func (p *Pool) LogValue() slog.Value {
 	return slog.GroupValue(slog.Bool(KeyPoolClosed, p.closed.Load()),
 		slog.Int(KeyWorkerCount, p.maxWorkers),
@@ -217,6 +270,8 @@ func (p *Pool) LogValue() slog.Value {
 	)
 }
 
+// collectMetrics processes metric results from the metricsChannel, updating success and failure counts
+// in a thread-safe manner.
 func (p *Pool) collectMetrics() {
 	for mr := range p.metricsChannel {
 		p.metrics.mu.Lock()

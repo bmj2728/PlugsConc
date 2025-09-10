@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// ctxKeyWorkerID is the context key used to store and retrieve the worker ID from a context.
 const (
 	ctxKeyWorkerID = ctxKey("worker_id")
 )
