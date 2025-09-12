@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/exec"
 
-	"PlugsConc/internal/logger"
-	"PlugsConc/pkg/exten"
+	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/pkg/shared/animal"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -19,11 +19,11 @@ var handshakeConfig = plugin.HandshakeConfig{
 }
 
 var pluginMap = map[string]plugin.Plugin{
-	"dog":   &exten.AnimalPlugin{},
-	"pig":   &exten.AnimalPlugin{},
-	"cow":   &exten.AnimalPlugin{},
-	"cat":   &exten.AnimalPlugin{},
-	"horse": &exten.AnimalPlugin{},
+	"dog":   &animal.AnimalPlugin{},
+	"pig":   &animal.AnimalPlugin{},
+	"cow":   &animal.AnimalPlugin{},
+	"cat":   &animal.AnimalPlugin{},
+	"horse": &animal.AnimalPlugin{},
 }
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/dog/dog"),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
 	})
 	defer dogClient.Kill()
 
@@ -58,13 +58,13 @@ func main() {
 		slog.Error("Failed to dispense dog", slog.Any("err", err))
 		os.Exit(1)
 	}
-	woof := dog.(exten.Animal).Speak()
+	woof := dog.(animal.Animal).Speak(true)
 
 	pigClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/pig/pig"),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
 	})
 	defer pigClient.Kill()
 
@@ -78,13 +78,13 @@ func main() {
 	if err != nil {
 		slog.Error("Failed to dispense pig", slog.Any("err", err))
 	}
-	oink := pig.(exten.Animal).Speak()
+	oink := pig.(animal.Animal).Speak(false)
 
 	catClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/cat/cat"),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
 	})
 	defer catClient.Kill()
 
@@ -98,13 +98,13 @@ func main() {
 	if err != nil {
 		slog.Error("Failed to dispense cat", slog.Any("err", err))
 	}
-	meow := cat.(exten.Animal).Speak()
+	meow := cat.(animal.Animal).Speak(true)
 
 	cowClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/cow/cow"),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
 	})
 	defer cowClient.Kill()
 
@@ -117,13 +117,13 @@ func main() {
 	if err != nil {
 		slog.Error("Failed to dispense cow", slog.Any("err", err))
 	}
-	moo := cow.(exten.Animal).Speak()
+	moo := cow.(animal.Animal).Speak(true)
 
 	horseClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/horse/horse"),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
 	})
 	defer horseClient.Kill()
 
@@ -136,7 +136,7 @@ func main() {
 	if err != nil {
 		slog.Error("Failed to dispense horse", slog.Any("err", err))
 	}
-	neigh := horse.(exten.Animal).Speak()
+	neigh := horse.(animal.Animal).Speak(false)
 
 	fmt.Printf("The dog says %s\n", woof)
 	fmt.Printf("The pig says %s\n", oink)

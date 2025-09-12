@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // ErrNoStart indicates that a required start time is missing.

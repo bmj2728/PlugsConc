@@ -1,7 +1,7 @@
 package main
 
 import (
-	"PlugsConc/pkg/exten"
+	"github.com/bmj2728/PlugsConc/pkg/shared/animal"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -9,8 +9,13 @@ import (
 type Dog struct {
 }
 
-func (d Dog) Speak() string {
-	return "Woof"
+func (d Dog) Speak(isLoud bool) string {
+	//return "Woof"
+	if isLoud {
+		return "WOOF!"
+	} else {
+		return "Woof"
+	}
 }
 
 var handshakeConfig = plugin.HandshakeConfig{
@@ -23,11 +28,12 @@ func main() {
 	dog := Dog{}
 
 	pluginMap := map[string]plugin.Plugin{
-		"dog": &exten.AnimalPlugin{Impl: dog},
+		"dog": &animal.AnimalPlugin{Impl: dog},
 	}
 
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: handshakeConfig,
 		Plugins:         pluginMap,
+		//GRPCServer: plugin.DefaultGRPCServer, // add this line to enable grpc
 	})
 }

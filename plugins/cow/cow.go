@@ -1,7 +1,7 @@
 package main
 
 import (
-	"PlugsConc/pkg/exten"
+	"github.com/bmj2728/PlugsConc/pkg/shared/animal"
 
 	"github.com/hashicorp/go-plugin"
 )
@@ -9,8 +9,12 @@ import (
 type Cow struct {
 }
 
-func (c Cow) Speak() string {
-	return "Moo"
+func (c Cow) Speak(isLoud bool) string {
+	if isLoud {
+		return "MOO!"
+	} else {
+		return "Moo"
+	}
 }
 
 var handshakeConfig = plugin.HandshakeConfig{
@@ -23,7 +27,7 @@ func main() {
 	cow := Cow{}
 
 	pluginMap := map[string]plugin.Plugin{
-		"cow": &exten.AnimalPlugin{Impl: cow},
+		"cow": &animal.AnimalPlugin{Impl: cow},
 	}
 
 	plugin.Serve(&plugin.ServeConfig{

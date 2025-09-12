@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // ctxKey is a custom string-based type used as keys for storing and retrieving values in context.

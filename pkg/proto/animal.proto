@@ -1,0 +1,15 @@
+syntax = "proto3";
+package proto;
+option go_package = "github.com/bmj2728/PlugsConc/pkg/protogen/animalpb";
+
+message SpeakRequest {
+  bool isLoud = 1;
+}
+
+message SpeakResponse {
+  string resp = 1;
+}
+
+service Animal {
+  rpc Speak(SpeakRequest) returns (SpeakResponse);
+}

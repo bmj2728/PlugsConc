@@ -6,7 +6,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // Worker represents a worker that processes jobs from the jobs channel and sends results

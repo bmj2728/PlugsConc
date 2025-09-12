@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // ErrPoolClosed indicates that the worker pool has been closed and cannot accept any new jobs.

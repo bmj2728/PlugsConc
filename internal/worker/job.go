@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/logger"
 
 	"github.com/bmj2728/utils/pkg/strutil"
 )
