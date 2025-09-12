@@ -1,10 +1,14 @@
-name: pig
-type: Animal
-version: 1.0.0
-description: This plugin is provides a pig implementation of the animal interface
-maintainer: Brian Jipson
-url:
-protocol_version: 1
-magic_cookie_key: PIG_PLUGIN
-magic_cookie_value: Iht1Mf5FTcPOmXfGFkMEEfwIUxS8TBw0QgXCSqQw83UddifllFU2i3kO4r1i0rQr
-entrypoint: pig
+#plugin manifest
+plugin_name: pig
+plugin_type: Animal
+plugin_format: rpc
+plugin_language: go
+plugin_entrypoint: pig
+plugin_version: 1.0.0
+plugin_description: This plugin is provides a pig implementation of the animal interface
+plugin_maintainer: Brian Jipson
+plugin_url: https://github.com/bmj2728/pig-plugin
+handshake:
+  protocol_version: 1
+  magic_cookie_key: PIG_PLUGIN
+  magic_cookie_value: Iht1Mf5FTcPOmXfGFkMEEfwIUxS8TBw0QgXCSqQw83UddifllFU2i3kO4r1i0rQr

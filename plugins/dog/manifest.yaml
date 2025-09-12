@@ -1,10 +1,14 @@
-name: dog
-type: Animal
-version: 1.0.0
-description: This plugin is provides a dog implementation of the animal interface
-maintainer: Brian Jipson
-url:
-protocol_version: 1
-magic_cookie_key: DOG_PLUGIN
-magic_cookie_value: 2ggRd5S9bhHottawB6eXwghiOAhekGORmOfIczh5b1D3AYlmrRWIXdbqwDHDJmjq
-entrypoint: dog
+# plugin manifest
+plugin_name: dog
+plugin_type: AnimalPlugin
+plugin_format: rpc
+plugin_language: go
+plugin_entrypoint: dog
+plugin_version: 1.0.0
+plugin_description: This plugin is provides a dog implementation of the animal interface
+plugin_maintainer: Brian Jipson
+plugin_url: https://github.com/bmj2728/dog-plugin
+handshake:
+  protocol_version: 1
+  magic_cookie_key: DOG_PLUGIN
+  magic_cookie_value: 2ggRd5S9bhHottawB6eXwghiOAhekGORmOfIczh5b1D3AYlmrRWIXdbqwDHDJmjq

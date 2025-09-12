@@ -7,6 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/registry"
 	"github.com/bmj2728/PlugsConc/pkg/shared/animal"
 
 	"github.com/hashicorp/go-plugin"
@@ -39,6 +40,19 @@ func main() {
 
 	slog.SetDefault(slog.New(logHandler))
 	slog.Info("Logger initialized")
+
+	loader, err := registry.NewPluginLoader("./plugins")
+	if err != nil {
+		slog.Error("Failed to create plugin loader", slog.Any("err", err))
+		os.Exit(1)
+	}
+	p, e := loader.Load()
+	if len(e) > 0 {
+		slog.Error("Failed to load plugins", slog.Any("err", e))
+	}
+	for _, v := range p {
+		slog.Info("Loaded plugin", slog.Any("plugin", v))
+	}
 
 	dogClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,

@@ -52,4 +52,8 @@ const (
 	// KeyJobError represents the key used to record or identify errors associated
 	// with a specific job during processing.
 	KeyJobError = "job_error"
+	// KeyPluginLoadErrors is a constant key used to log or identify errors encountered during plugin loading processes.
+	KeyPluginLoadErrors = "plugin_load_errors"
+	// KeyPluginMap is a constant key used to store or retrieve the plugin map from context or logging operations.
+	KeyPluginMap = "plugin_map"
 )
