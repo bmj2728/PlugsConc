@@ -50,9 +50,7 @@ func main() {
 	if len(e) > 0 {
 		slog.Error("Failed to load plugins", slog.Any("err", e))
 	}
-	for _, v := range p {
-		slog.Info("Loaded plugin", slog.Any("plugin", v))
-	}
+	slog.Info("Plugins loaded", slog.Any("plugins", p.LogValue()))
 
 	dogClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,

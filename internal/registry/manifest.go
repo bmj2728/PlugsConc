@@ -55,5 +55,16 @@ func LoadManifest(path string) (*Manifest, error) {
 
 func (m *Manifest) LogValue() slog.Value {
 	return slog.GroupValue(slog.String("name", m.PluginName),
-		slog.String("version", m.PluginVersion))
+		slog.String("version", m.PluginVersion),
+		slog.String("type", m.PluginType),
+		slog.String("format", m.PluginFormat),
+		slog.String("language", m.PluginLanguage),
+		slog.String("entrypoint", m.PluginEntrypoint),
+		slog.String("description", m.PluginDescription),
+		slog.String("maintainer", m.PluginMaintainer),
+		slog.String("url", m.PluginURL),
+		slog.Group("handshake_config", slog.Int("protocol_version", m.Handshake.ProtocolVersion),
+			slog.String("magic_cookie_key", m.Handshake.MagicCookieKey),
+			slog.String("magic_cookie_value", m.Handshake.MagicCookieValue)),
+	)
 }

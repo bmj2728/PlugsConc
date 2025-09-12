@@ -2,10 +2,14 @@ package registry
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // ErrInvalidPluginPath is returned when the specified plugins directory path is invalid or cannot be accessed.
@@ -21,6 +25,19 @@ func (l LoaderErrors) Add(dir string, err error) LoaderErrors {
 	return l
 }
 
+func (l LoaderErrors) LogValue() slog.Value {
+	var formatted strings.Builder
+	if len(l) == 0 {
+		return slog.AnyValue("")
+	}
+	formatted.WriteString("Plugin Loading Errors:\n")
+	for d, e := range l {
+		entry := fmt.Sprintf("%s: %s\n", d, e.Error())
+		formatted.WriteString(entry)
+	}
+	return slog.GroupValue(slog.String(logger.KeyPluginLoadErrors, formatted.String()))
+}
+
 // Manifests is a map that associates directory paths with their corresponding plugin metadata as Manifest instances.
 type Manifests map[string]*Manifest
 
@@ -33,6 +50,19 @@ func (m Manifests) Add(dir string, manifest *Manifest) {
 // Returns nil if not found.
 func (m Manifests) Get(dir string) *Manifest {
 	return m[dir]
+}
+
+func (m Manifests) LogValue() slog.Value {
+	var formatted strings.Builder
+	if len(m) == 0 {
+		return slog.AnyValue("")
+	}
+	formatted.WriteString("Plugin Manifests:\n")
+	for d, m := range m {
+		entry := fmt.Sprintf("%s: %s\n", d, m.LogValue().String())
+		formatted.WriteString(entry)
+	}
+	return slog.GroupValue(slog.String(logger.KeyPluginMap, formatted.String()))
 }
 
 // PluginLoader represents a structure for loading and managing plugins from a specified root directory.
