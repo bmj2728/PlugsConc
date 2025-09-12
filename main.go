@@ -19,11 +19,12 @@ var handshakeConfig = plugin.HandshakeConfig{
 }
 
 var pluginMap = map[string]plugin.Plugin{
-	"dog":   &animal.AnimalPlugin{},
-	"pig":   &animal.AnimalPlugin{},
-	"cow":   &animal.AnimalPlugin{},
-	"cat":   &animal.AnimalPlugin{},
-	"horse": &animal.AnimalPlugin{},
+	"dog":      &animal.AnimalPlugin{},
+	"dog-grpc": &animal.AnimalGRPCPlugin{},
+	"pig":      &animal.AnimalPlugin{},
+	"cow":      &animal.AnimalPlugin{},
+	"cat":      &animal.AnimalPlugin{},
+	"horse":    &animal.AnimalPlugin{},
 }
 
 func main() {
@@ -43,7 +44,7 @@ func main() {
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/dog/dog"),
-		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
 	})
 	defer dogClient.Kill()
 
@@ -138,11 +139,31 @@ func main() {
 	}
 	neigh := horse.(animal.Animal).Speak(false)
 
+	gDogClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+	})
+	defer gDogClient.Kill()
+
+	rpcGDogClient, err := gDogClient.Client()
+	if err != nil {
+		slog.Error("Failed to create gDogClient", slog.Any("err", err))
+		os.Exit(1)
+	}
+	gDog, err := rpcGDogClient.Dispense("dog-grpc")
+	if err != nil {
+		slog.Error("Failed to dispense dog", slog.Any("err", err))
+	}
+	gWoof := gDog.(animal.Animal).Speak(false)
+
 	fmt.Printf("The dog says %s\n", woof)
 	fmt.Printf("The pig says %s\n", oink)
 	fmt.Printf("The cat says %s\n", meow)
 	fmt.Printf("The cow says %s\n", moo)
 	fmt.Printf("The horse says %s\n", neigh)
+	fmt.Printf("The dog-grpc says %s\n", gWoof)
 
 	plugin.CleanupClients()
 }

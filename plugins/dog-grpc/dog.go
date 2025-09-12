@@ -28,11 +28,12 @@ func main() {
 	dog := Dog{}
 
 	pluginMap := map[string]plugin.Plugin{
-		"dog": &animal.AnimalPlugin{Impl: dog},
+		"dog-grpc": &animal.AnimalGRPCPlugin{Impl: dog},
 	}
 
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: handshakeConfig,
 		Plugins:         pluginMap,
+		GRPCServer:      plugin.DefaultGRPCServer,
 	})
 }

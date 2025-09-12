@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/rpc"
 
+	"github.com/bmj2728/PlugsConc/pkg/protogen/animalpb"
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
@@ -25,14 +26,17 @@ type AnimalGRPCPlugin struct {
 	Impl Animal
 }
 
-func (ag *AnimalGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	//needs grpc implementation
+func (ag *AnimalGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
+	animalpb.RegisterAnimalServer(s, &GRPCServer{Impl: ag.Impl})
 	return nil
 }
 
-func (ag *AnimalGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	//needs grpc implementation
-	return nil, nil
+func (ag *AnimalGRPCPlugin) GRPCClient(ctx context.Context,
+	broker *plugin.GRPCBroker,
+	c *grpc.ClientConn) (interface{}, error) {
+
+	ac := animalpb.NewAnimalClient(c)
+	return &GRPCClient{client: ac}, nil
 }
 
 /**
