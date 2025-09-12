@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -18,8 +19,11 @@ var handshakeConfig = plugin.HandshakeConfig{
 }
 
 var pluginMap = map[string]plugin.Plugin{
-	"dog": &exten.AnimalPlugin{},
-	"pig": &exten.AnimalPlugin{},
+	"dog":   &exten.AnimalPlugin{},
+	"pig":   &exten.AnimalPlugin{},
+	"cow":   &exten.AnimalPlugin{},
+	"cat":   &exten.AnimalPlugin{},
+	"horse": &exten.AnimalPlugin{},
 }
 
 func main() {
@@ -76,6 +80,69 @@ func main() {
 	}
 	oink := pig.(exten.Animal).Speak()
 
-	slog.Info("Animal says", slog.String("dog", woof), slog.String("pig", oink))
+	catClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/cat/cat"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+	})
+	defer catClient.Kill()
 
+	rpcCatClient, err := catClient.Client()
+	if err != nil {
+		slog.Error("Failed to create catClient", slog.Any("err", err))
+		os.Exit(1)
+	}
+
+	cat, err := rpcCatClient.Dispense("cat")
+	if err != nil {
+		slog.Error("Failed to dispense cat", slog.Any("err", err))
+	}
+	meow := cat.(exten.Animal).Speak()
+
+	cowClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/cow/cow"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+	})
+	defer cowClient.Kill()
+
+	rpcCowClient, err := cowClient.Client()
+	if err != nil {
+		slog.Error("Failed to create cowClient", slog.Any("err", err))
+		os.Exit(1)
+	}
+	cow, err := rpcCowClient.Dispense("cow")
+	if err != nil {
+		slog.Error("Failed to dispense cow", slog.Any("err", err))
+	}
+	moo := cow.(exten.Animal).Speak()
+
+	horseClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/horse/horse"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+	})
+	defer horseClient.Kill()
+
+	rpcHorseClient, err := horseClient.Client()
+	if err != nil {
+		slog.Error("Failed to create horseClient", slog.Any("err", err))
+		os.Exit(1)
+	}
+	horse, err := rpcHorseClient.Dispense("horse")
+	if err != nil {
+		slog.Error("Failed to dispense horse", slog.Any("err", err))
+	}
+	neigh := horse.(exten.Animal).Speak()
+
+	fmt.Printf("The dog says %s\n", woof)
+	fmt.Printf("The pig says %s\n", oink)
+	fmt.Printf("The cat says %s\n", meow)
+	fmt.Printf("The cow says %s\n", moo)
+	fmt.Printf("The horse says %s\n", neigh)
+
+	plugin.CleanupClients()
 }

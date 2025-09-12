@@ -1,0 +1,10 @@
+name: horse
+type: Animal
+version: 1.0.0
+description: This plugin is provides a horse implementation of the animal interface
+maintainer: Brian Jipson
+url:
+protocol_version: 1
+magic_cookie_key: HORSE_PLUGIN
+magic_cookie_value: QdS0U7Xq1HU0Okp336Jv0Ptdjbp0lwQJvfDpgtS4xckcSsT5EsBkO9kHUtqqUg5Z
+entrypoint: horse

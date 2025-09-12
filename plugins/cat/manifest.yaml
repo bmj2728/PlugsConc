@@ -1,0 +1,10 @@
+name: cat
+type: Animal
+version: 1.0.0
+description: This plugin is provides a cat implementation of the animal interface
+maintainer: Brian Jipson
+url:
+protocol_version: 1
+magic_cookie_key: CAT_PLUGIN
+magic_cookie_value: lFLmoCE3ckw6erJxYxcRd6keedUodVMctD3XOGj9bLMYsFZi1Qh0vKEJftppo5ek
+entrypoint: cat
