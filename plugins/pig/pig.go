@@ -6,11 +6,11 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-type Dog struct {
+type Pig struct {
 }
 
-func (d Dog) Speak() string {
-	return "Woof"
+func (p Pig) Speak() string {
+	return "Oink"
 }
 
 var handshakeConfig = plugin.HandshakeConfig{
@@ -20,10 +20,10 @@ var handshakeConfig = plugin.HandshakeConfig{
 }
 
 func main() {
-	dog := Dog{}
+	pig := Pig{}
 
 	pluginMap := map[string]plugin.Plugin{
-		"dog": &exten.AnimalPlugin{Impl: dog},
+		"pig": &exten.AnimalPlugin{Impl: pig},
 	}
 
 	plugin.Serve(&plugin.ServeConfig{

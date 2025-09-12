@@ -18,7 +18,8 @@ var handshakeConfig = plugin.HandshakeConfig{
 }
 
 var pluginMap = map[string]plugin.Plugin{
-	"animal": &exten.AnimalPlugin{},
+	"dog": &exten.AnimalPlugin{},
+	"pig": &exten.AnimalPlugin{},
 }
 
 func main() {
@@ -34,27 +35,47 @@ func main() {
 	slog.SetDefault(slog.New(logHandler))
 	slog.Info("Logger initialized")
 
-	client := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig: handshakeConfig,
-		Plugins:         pluginMap,
-		Cmd:             exec.Command("./plugins/dog/dog"),
+	dogClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/dog/dog"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
 	})
-	defer client.Kill()
+	defer dogClient.Kill()
 
-	rpcClient, err := client.Client()
+	rpcDogClient, err := dogClient.Client()
 	if err != nil {
-		slog.Error("Failed to create client", err)
+		slog.Error("Failed to create dogClient", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	raw, err := rpcClient.Dispense("animal")
+	dog, err := rpcDogClient.Dispense("dog")
 	if err != nil {
-		slog.Error("Failed to dispense dog", err)
+		slog.Error("Failed to dispense dog", slog.Any("err", err))
+		os.Exit(1)
+	}
+	woof := dog.(exten.Animal).Speak()
+
+	pigClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/pig/pig"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+	})
+	defer pigClient.Kill()
+
+	rpcPigClient, err := pigClient.Client()
+	if err != nil {
+		slog.Error("Failed to create pigClient", slog.Any("err", err))
 		os.Exit(1)
 	}
 
-	dog := raw.(exten.Animal)
-	woof := dog.Speak()
-	slog.Info("Animal says", slog.String("dog", woof))
+	pig, err := rpcPigClient.Dispense("pig")
+	if err != nil {
+		slog.Error("Failed to dispense pig", slog.Any("err", err))
+	}
+	oink := pig.(exten.Animal).Speak()
+
+	slog.Info("Animal says", slog.String("dog", woof), slog.String("pig", oink))
 
 }
