@@ -1,25 +1,33 @@
-package dog
+package main
 
-import "fmt"
+import (
+	"PlugsConc/pkg/exten"
+
+	"github.com/hashicorp/go-plugin"
+)
 
 type Dog struct {
-	pluginName    string
-	pluginType    string
-	pluginVersion string
 }
 
-func (d Dog) Name() string {
-	return d.pluginName
+func (d Dog) Speak() string {
+	return "Woof"
 }
 
-func (d Dog) Version() string {
-	return d.pluginVersion
+var handshakeConfig = plugin.HandshakeConfig{
+	ProtocolVersion:  1,
+	MagicCookieKey:   "ANIMAL_PLUGIN",
+	MagicCookieValue: "hello",
 }
 
-func (d Dog) Type() string {
-	return d.pluginType
-}
+func main() {
+	dog := Dog{}
 
-func (d Dog) Speak() {
-	fmt.Println("Woof")
+	pluginMap := map[string]plugin.Plugin{
+		"animal": &exten.AnimalPlugin{Impl: dog},
+	}
+
+	plugin.Serve(&plugin.ServeConfig{
+		HandshakeConfig: handshakeConfig,
+		Plugins:         pluginMap,
+	})
 }
