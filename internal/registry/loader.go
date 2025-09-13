@@ -123,8 +123,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 				// this allows observability for improperly "installed" plugins
 				pl.manifests.add(absPluginRoot, NewManifestEntry(manifest, hash))
 			}
-			// add the manifest to the manifests map
-			// TODO add md5 hashing second parameter should be the manifest contents hashed
+			// add the manifest to the manifest entry map
 			pl.manifests.add(absPluginRoot, NewManifestEntry(manifest, hash))
 		}
 		return nil
