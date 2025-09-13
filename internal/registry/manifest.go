@@ -1,7 +1,10 @@
 package registry
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"os"
 
@@ -33,27 +36,45 @@ type Handshake struct {
 	MagicCookieValue string `json:"magic_cookie_value" yaml:"magic_cookie_value"`
 }
 
-// LoadManifest reads a YAML manifest file from the given path and unmarshals its contents into a Manifest struct.
-// Returns a pointer to the Manifest and an error if the file cannot be read or unmarshalled.
-// If the provided path is empty, it returns nil without error.
-func LoadManifest(path string) (*Manifest, error) {
-	if path == "" {
-		return nil, ErrReadingFile
+// LoadManifest reads a manifest file from a specified root and path, parses its YAML content, and returns the Manifest.
+// Returns an error if the root cannot be opened, the file cannot be read, or the YAML is invalid.
+func LoadManifest(root, path string) (*Manifest, string, error) {
+	r, err := os.OpenRoot(root)
+	if err != nil {
+		err := errors.Join(ErrLoadingFS, err)
+		slog.Error("Failed to load plugin root", slog.Any("err", err))
+		return nil, "", err
+	}
+	defer func(r *os.Root) {
+		err := r.Close()
+		if err != nil {
+			err := errors.Join(ErrClosingFS, err)
+			slog.Error("Failed to close root", slog.Any("err", err))
+		}
+	}(r)
+
+	rootFS := r.FS()
+
+	f, err := fs.ReadFile(rootFS, path)
+	if err != nil {
+		err := errors.Join(ErrReadingFile, err)
+		slog.Error("Failed to load manifest", slog.Any("err", err))
+		return nil, "", err
 	}
 
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, errors.Join(ErrReadingFile, err)
-	}
+	hash := getMD5Hash(f)
 
 	var manifest Manifest
-	if err := yaml.Unmarshal(data, &manifest); err != nil {
-		return nil, errors.Join(ErrYAMLUnmarshaling, err)
+	if err := yaml.Unmarshal(f, &manifest); err != nil {
+		err := errors.Join(ErrYAMLUnmarshaling, err)
+		slog.Error("Failed to unmarshall manifest", slog.Any("err", err))
+		return nil, hash, err
 	}
 
-	return &manifest, nil
+	return &manifest, hash, nil
 }
 
+// LogValue converts the Manifest's metadata into a structured slog.Value for logging purposes.
 func (m *Manifest) LogValue() slog.Value {
 	return slog.GroupValue(slog.String("name", m.PluginName),
 		slog.String("version", m.PluginVersion),
@@ -68,4 +89,9 @@ func (m *Manifest) LogValue() slog.Value {
 			slog.String("magic_cookie_key", m.Handshake.MagicCookieKey),
 			slog.String("magic_cookie_value", m.Handshake.MagicCookieValue)),
 	)
+}
+
+func getMD5Hash(data []byte) string {
+	hash := md5.Sum(data)
+	return hex.EncodeToString(hash[:])
 }
