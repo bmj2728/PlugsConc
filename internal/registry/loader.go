@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -15,6 +14,10 @@ import (
 // ErrInvalidPluginPath is returned when the specified plugins directory path is invalid or cannot be accessed.
 var (
 	ErrInvalidPluginPath = errors.New("invalid plugins directory path")
+	ErrLoadingFS         = errors.New("failed to load plugin files")
+	ErrClosingFS         = errors.New("failed to close plugin files")
+	ErrReadingFile       = errors.New("failed to read file")
+	ErrYAMLUnmarshaling  = errors.New("failed to unmarshal YAML")
 )
 
 // LoaderErrors is a map that associates a directory with the load error that occurred during its loading process.
@@ -68,22 +71,15 @@ func (m Manifests) LogValue() slog.Value {
 // PluginLoader represents a structure for loading and managing plugins from a specified root directory.
 // It holds metadata for each plugin in the form of manifests.
 type PluginLoader struct {
-	path      string
-	root      *os.Root // this should be the plugins directory
+	path      string // path to the plugins directory
 	manifests Manifests
 }
 
 // NewPluginLoader initializes a PluginLoader for a given plugins directory path and validates its existence.
 // Returns a new PluginLoader instance or an error if the path is invalid.
 func NewPluginLoader(path string) (*PluginLoader, error) {
-	root, err := os.OpenRoot(path)
-	if err != nil {
-		slog.Error("Failed to open plugins directory", slog.Any("err", errors.Join(ErrInvalidPluginPath, err)))
-		return nil, errors.Join(ErrInvalidPluginPath, err)
-	}
 	loader := &PluginLoader{
 		path: path,
-		root: root,
 	}
 	return loader, nil
 }
@@ -94,6 +90,47 @@ func (pl *PluginLoader) Load() (Manifests, LoaderErrors) {
 
 	// Initialize the manifests map or replace it if it already exists
 	pl.manifests = make(map[string]*Manifest)
+
+	//root, err := os.OpenRoot(pl.path)
+	//if err != nil {
+	//	lErrs.Add(pl.path, errors.Join(ErrInvalidPluginPath, err))
+	//	return pl.manifests, lErrs
+	//}
+	//defer func(root *os.Root) {
+	//	err := root.Close()
+	//	if err != nil {
+	//		slog.Error("Failed to close root", slog.Any("err", err))
+	//	}
+	//}(root)
+	//
+	//pluginFS := root.FS()
+	//
+	//err = fs.WalkDir(pluginFS, ".", func(path string, d fs.DirEntry, err error) error {
+	//	if path == pl.path {
+	//		return nil
+	//	}
+	//	if err != nil && d.IsDir() {
+	//		lErrs.Add(path, errors.Join(ErrInvalidPluginPath, err))
+	//		return err
+	//	}
+	//	if !d.IsDir() {
+	//		return nil
+	//	}
+	//	if d.IsDir() {
+	//		manifestPath := filepath.Join(path, "manifest.yaml")
+	//		manifest, err := LoadManifest(path, manifestPath)
+	//		if err != nil {
+	//			// if there is an error loading the manifest, add it to the LoaderErrors map
+	//			lErrs.Add(path, err)
+	//		}
+	//		// add the manifest to the manifests map
+	//		pl.manifests.Add(path, manifest)
+	//	}
+	//	return nil
+	//})
+	//if err != nil {
+	//	return pl.manifests, lErrs
+	//}
 
 	// Walk the plugins directory pl.path - errors are loaded into lErrs
 	_ = filepath.Walk(pl.path, func(path string, info fs.FileInfo, err error) error {

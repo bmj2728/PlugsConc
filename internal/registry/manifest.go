@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 
@@ -37,17 +38,17 @@ type Handshake struct {
 // If the provided path is empty, it returns nil without error.
 func LoadManifest(path string) (*Manifest, error) {
 	if path == "" {
-		return nil, nil
+		return nil, ErrReadingFile
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(ErrReadingFile, err)
 	}
 
 	var manifest Manifest
 	if err := yaml.Unmarshal(data, &manifest); err != nil {
-		return nil, err
+		return nil, errors.Join(ErrYAMLUnmarshaling, err)
 	}
 
 	return &manifest, nil
