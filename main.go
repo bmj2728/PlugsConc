@@ -8,7 +8,7 @@ import (
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/registry"
-	"github.com/bmj2728/PlugsConc/pkg/shared/animal"
+	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
 	"github.com/hashicorp/go-plugin"
 )

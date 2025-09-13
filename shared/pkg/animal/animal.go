@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/rpc"
 
-	"github.com/bmj2728/PlugsConc/pkg/protogen/animalpb"
+	"github.com/bmj2728/PlugsConc/shared/protogen/animalpb"
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
 
 // Animal represents a shared interface for animals that extends the base PluginMeta interface.
-// It requires implementing a Speak method, defining how the animal communicates.
+// It requires implementing a Speak method, defining how the animalpb communicates.
 type Animal interface {
 	Speak(isLoud bool) string
 }

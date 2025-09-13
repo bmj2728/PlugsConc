@@ -3,7 +3,7 @@ package animal
 import (
 	"context"
 
-	"github.com/bmj2728/PlugsConc/pkg/protogen/animalpb"
+	"github.com/bmj2728/PlugsConc/shared/protogen/animalpb"
 )
 
 type GRPCClient struct {

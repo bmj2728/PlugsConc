@@ -1,6 +1,6 @@
 syntax = "proto3";
 package proto;
-option go_package = "github.com/bmj2728/PlugsConc/pkg/protogen/animalpb";
+option go_package = "github.com/bmj2728/PlugsConc/shared/protogen/animalpb";
 
 message SpeakRequest {
   bool isLoud = 1;

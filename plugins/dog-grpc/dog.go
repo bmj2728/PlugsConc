@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bmj2728/PlugsConc/pkg/shared/animal"
+	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
 	"github.com/hashicorp/go-plugin"
 )

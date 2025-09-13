@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.9
 // 	protoc        v3.19.6
-// source: pkg/proto/animal.proto
+// source: shared/proto/animalpb.proto
 
 package animalpb
 
@@ -113,13 +113,13 @@ var File_pkg_proto_animal_proto protoreflect.FileDescriptor
 
 const file_pkg_proto_animal_proto_rawDesc = "" +
 	"\n" +
-	"\x16pkg/proto/animal.proto\x12\x05proto\"&\n" +
+	"\x16pkg/proto/animalpb.proto\x12\x05proto\"&\n" +
 	"\fSpeakRequest\x12\x16\n" +
 	"\x06isLoud\x18\x01 \x01(\bR\x06isLoud\"#\n" +
 	"\rSpeakResponse\x12\x12\n" +
 	"\x04resp\x18\x01 \x01(\tR\x04resp2<\n" +
 	"\x06Animal\x122\n" +
-	"\x05Speak\x12\x13.proto.SpeakRequest\x1a\x14.proto.SpeakResponseB4Z2github.com/bmj2728/PlugsConc/pkg/protogen/animalpbb\x06proto3"
+	"\x05Speak\x12\x13.proto.SpeakRequest\x1a\x14.proto.SpeakResponseB4Z2github.com/bmj2728/PlugsConc/shared/protogen/animalpbb\x06proto3"
 
 var (
 	file_pkg_proto_animal_proto_rawDescOnce sync.Once

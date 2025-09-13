@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.19.6
-// source: pkg/proto/animal.proto
+// source: shared/proto/animalpb.proto
 
 package animalpb
 
@@ -117,5 +117,5 @@ var Animal_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pkg/proto/animal.proto",
+	Metadata: "shared/proto/animalpb.proto",
 }
