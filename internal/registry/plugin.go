@@ -20,29 +20,29 @@ const (
 // PluginTypes provides thread-safe storage and retrieval of plugin types, mapped from PluginType to their
 // implementations.
 type PluginTypes struct {
-	types map[PluginType]interface{}
+	types map[PluginType]plugin.Plugin
 	mu    sync.RWMutex
 }
 
 // AvailablePluginTypes is a global instance of PluginTypes containing mappings of PluginType to their respective
 // implementations.
 var AvailablePluginTypes = PluginTypes{
-	types: map[PluginType]interface{}{
-		AnimalPlugin:     animal.AnimalPlugin{},
-		AnimalGRPCPlugin: animal.AnimalGRPCPlugin{},
+	types: map[PluginType]plugin.Plugin{
+		AnimalPlugin:     &animal.AnimalPlugin{},
+		AnimalGRPCPlugin: &animal.AnimalGRPCPlugin{},
 	},
 	mu: sync.RWMutex{},
 }
 
 // Get retrieves the value associated with the given PluginType from the types map in a thread-safe manner.
-func (pt *PluginTypes) Get(pluginType PluginType) interface{} {
+func (pt *PluginTypes) Get(pluginType PluginType) plugin.Plugin {
 	pt.mu.RLock()
 	defer pt.mu.RUnlock()
 	return pt.types[pluginType]
 }
 
 // GetByString retrieves the value associated with a plugin type string from the PluginTypes map if it is valid.
-func (pt *PluginTypes) GetByString(pluginType string) interface{} {
+func (pt *PluginTypes) GetByString(pluginType string) plugin.Plugin {
 	pt.mu.RLock()
 	defer pt.mu.RUnlock()
 	if AvailablePluginTypesLookup.IsValidPluginType(pluginType) {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/registry"
@@ -57,14 +58,24 @@ func main() {
 	}
 	slog.Info("Plugins loaded", slog.Any("plugins", p.LogValue()))
 
+	var pluginMapImported = make(map[string]plugin.Plugin)
+
 	for _, m := range p.GetManifests() {
 		config, err := m.Manifest().Handshake.ToConfig()
 		if err != nil {
 			slog.Error("Failed to convert manifest to config", slog.Any("err", err))
 		}
+		validType := registry.AvailablePluginTypesLookup.IsValidPluginType(m.Manifest().PluginType)
+		if validType {
+			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginType)
+			pluginMapImported[m.Manifest().PluginName] = pt
+			fmt.Println(pt)
+		}
 		fmt.Println(config)
-		fmt.Println(m.Hash())
 	}
+
+	fmt.Println(pluginMapImported)
+	fmt.Println(pluginMap)
 
 	//dogClient := plugin.NewClient(&plugin.ClientConfig{
 	//	HandshakeConfig:  handshakeConfig,
