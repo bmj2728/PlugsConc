@@ -1,6 +1,6 @@
 # plugin manifest
 plugin_name: dog
-plugin_type: AnimalGRPCPlugin
+plugin_type: animal-grpc
 plugin_format: grpc
 plugin_language: go
 plugin_entrypoint: dog

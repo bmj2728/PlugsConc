@@ -1,47 +1,161 @@
 package registry
 
-// PluginType represents a category or type of plugin, managed using integer values.
+import (
+	"sync"
+
+	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
+	"github.com/hashicorp/go-plugin"
+)
+
+// PluginType represents a custom type used for defining various plugin classifications within the system.
 type PluginType int
 
-// AnimalPlugin represents a standard plugin type for animals.
-// AnimalGRPCPlugin represents a gRPC plugin type for animals.
+// AnimalPlugin represents a standard animal-related plugin type.
+// AnimalGRPCPlugin represents an animal-related plugin type using gRPC.
 const (
 	AnimalPlugin PluginType = iota
 	AnimalGRPCPlugin
 )
 
-// PluginTypes maps PluginType constants to their string representations for better readability
-// and debugging convenience.
-var PluginTypes = map[PluginType]string{
-	AnimalPlugin:     "AnimalPlugin",
-	AnimalGRPCPlugin: "AnimalGRPCPlugin",
+// PluginTypes provides thread-safe storage and retrieval of plugin types, mapped from PluginType to their
+// implementations.
+type PluginTypes struct {
+	types map[PluginType]interface{}
+	mu    sync.RWMutex
 }
 
-// String returns the string representation of the PluginType by looking it up in the PluginTypes map.
-func (t PluginType) String() string {
-	return PluginTypes[t]
+// AvailablePluginTypes is a global instance of PluginTypes containing mappings of PluginType to their respective
+// implementations.
+var AvailablePluginTypes = PluginTypes{
+	types: map[PluginType]interface{}{
+		AnimalPlugin:     animal.AnimalPlugin{},
+		AnimalGRPCPlugin: animal.AnimalGRPCPlugin{},
+	},
+	mu: sync.RWMutex{},
 }
 
-// PluginFormat represents the format type for plugins, defined as an integer enumeration.
+// Get retrieves the value associated with the given PluginType from the types map in a thread-safe manner.
+func (pt *PluginTypes) Get(pluginType PluginType) interface{} {
+	pt.mu.RLock()
+	defer pt.mu.RUnlock()
+	return pt.types[pluginType]
+}
+
+// GetByString retrieves the value associated with a plugin type string from the PluginTypes map if it is valid.
+func (pt *PluginTypes) GetByString(pluginType string) interface{} {
+	pt.mu.RLock()
+	defer pt.mu.RUnlock()
+	if AvailablePluginTypesLookup.IsValidPluginType(pluginType) {
+		return pt.types[AvailablePluginTypesLookup.GetPluginType(pluginType)]
+	} else {
+		return nil
+	}
+}
+
+// PluginTypeLookup is a thread-safe structure that maps string keys to PluginType objects for plugin type management.
+type PluginTypeLookup struct {
+	types map[string]PluginType
+	mu    sync.RWMutex
+}
+
+// AvailablePluginTypesLookup is a mapping of plugin type names to their corresponding PluginType values.
+var AvailablePluginTypesLookup = PluginTypeLookup{
+	types: map[string]PluginType{
+		"animal":      AnimalPlugin,
+		"animal-grpc": AnimalGRPCPlugin,
+	},
+	mu: sync.RWMutex{},
+}
+
+// GetPluginType retrieves the PluginType associated with the provided pluginType key from the lookup map.
+func (ptl *PluginTypeLookup) GetPluginType(pluginType string) PluginType {
+	ptl.mu.RLock()
+	defer ptl.mu.RUnlock()
+	return ptl.types[pluginType]
+}
+
+// IsValidPluginType checks if the given plugin type string exists in the PluginTypeLookup's types map.
+func (ptl *PluginTypeLookup) IsValidPluginType(pluginType string) bool {
+	ptl.mu.RLock()
+	defer ptl.mu.RUnlock()
+	_, ok := ptl.types[pluginType]
+	return ok
+}
+
+/**
+ * Plugin Format Types
+**/
+
+// PluginFormat represents the type for defining various plugin communication formats.
 type PluginFormat int
 
-// GRPC represents the gRPC plugin format in the PluginFormat enumeration.
-// RPC represents the RPC plugin format in the PluginFormat enumeration.
+// GRPC represents a plugin format using gRPC.
+// RPC represents a plugin format using RPC.
 const (
 	GRPC PluginFormat = iota
 	RPC
 )
 
-// PluginFormats maps PluginFormat constants to their corresponding string representations.
-var PluginFormats = map[PluginFormat]string{
-	GRPC: "grpc",
-	RPC:  "rpc",
+// PluginFormats is a struct that manages a thread-safe map of PluginFormat values to their string representations.
+type PluginFormats struct {
+	formats map[PluginFormat][]plugin.Protocol
+	mu      sync.RWMutex
 }
 
-// String returns the string representation of the PluginFormat.
-func (f PluginFormat) String() string {
-	return PluginFormats[f]
+// AvailablePluginFormats defines a mapping between PluginFormat constants and their string representations.
+var AvailablePluginFormats = PluginFormats{
+	formats: map[PluginFormat][]plugin.Protocol{
+		GRPC: {plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+		RPC:  {plugin.ProtocolNetRPC},
+	},
+	mu: sync.RWMutex{},
 }
+
+func (pf *PluginFormats) Get(format PluginFormat) []plugin.Protocol {
+	pf.mu.RLock()
+	defer pf.mu.RUnlock()
+	return pf.formats[format]
+}
+
+func (pf *PluginFormats) GetByString(format string) []plugin.Protocol {
+	pf.mu.RLock()
+	defer pf.mu.RUnlock()
+	// todo
+	return nil
+}
+
+type PluginFormatLookup struct {
+	mu      sync.RWMutex
+	formats map[string]PluginFormat
+}
+
+// AvailablePluginFormatLookup is a pre-initialized PluginFormatLookup containing supported plugin formats
+// with thread safety.
+var AvailablePluginFormatLookup = PluginFormatLookup{
+	formats: map[string]PluginFormat{
+		"grpc": GRPC,
+		"rpc":  RPC,
+	},
+	mu: sync.RWMutex{},
+}
+
+// GetPluginFormat retrieves the PluginFormat associated with the given format string from the lookup.
+func (pfl *PluginFormatLookup) GetPluginFormat(format string) PluginFormat {
+	pfl.mu.RLock()
+	defer pfl.mu.RUnlock()
+	return pfl.formats[format]
+}
+
+// IsValidFormat checks if the provided format string exists as a key in the PluginFormatLookup map.
+// Returns true if valid.
+func (pfl *PluginFormatLookup) IsValidFormat(format string) bool {
+	_, ok := pfl.formats[format]
+	return ok
+}
+
+/**
+ * Plugin Language Types
+**/
 
 // PluginLanguage represents a language in which plugins can be implemented. It is represented as an integer type.
 type PluginLanguage int
@@ -73,7 +187,7 @@ const (
 	PHP
 )
 
-// PluginLanguages maps PluginLanguage enum values to their corresponding string representations.
+// PluginLanguages is a mapping of PluginLanguage constants to their corresponding string values.
 var PluginLanguages = map[PluginLanguage]string{
 	Go:     "go",
 	Python: "python",
@@ -85,11 +199,33 @@ var PluginLanguages = map[PluginLanguage]string{
 	Node:   "node",
 	Dart:   "dart",
 	CSharp: "c#",
-	ObjC:   "obj-c",
+	ObjC:   "objc",
 	PHP:    "php",
 }
 
 // String returns the string representation of the PluginLanguage using the PluginLanguages map.
 func (l PluginLanguage) String() string {
 	return PluginLanguages[l]
+}
+
+// PluginLanguageLookup maps string identifiers to their corresponding PluginLanguage constants.
+var PluginLanguageLookup = map[string]PluginLanguage{
+	"go":     Go,
+	"python": Python,
+	"swift":  Swift,
+	"ruby":   Ruby,
+	"c++":    CPP,
+	"java":   Java,
+	"kotlin": Kotlin,
+	"node":   Node,
+	"dart":   Dart,
+	"c#":     CSharp,
+	"objc":   ObjC,
+	"php":    PHP,
+}
+
+// IsValidLanguage checks if the provided language string exists in the PluginLanguageLookup map.
+func IsValidLanguage(lang string) bool {
+	_, ok := PluginLanguageLookup[lang]
+	return ok
 }

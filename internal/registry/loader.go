@@ -48,7 +48,7 @@ type PluginLoader struct {
 	manifests *Manifests
 }
 
-// NewPluginLoader creates a new instance of PluginLoader for managing plugins in the specified directory path.
+// NewPluginLoader initializes a new PluginLoader for managing plugins in the specified directory path.
 func NewPluginLoader(path string) (*PluginLoader, error) {
 	loader := &PluginLoader{
 		path:      path,
@@ -57,8 +57,7 @@ func NewPluginLoader(path string) (*PluginLoader, error) {
 	return loader, nil
 }
 
-// Load initializes and loads plugin manifests from the configured root directory, handling errors during the process.
-// Returns maps of plugin manifests and errors encountered during loading, keyed by the directory path.
+// Load discovers, parses, and loads plugin manifests from the specified directory, returning manifests and load errors.
 func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 	// Initialize a LoaderErrors map to store errors that occurred during plugin loading
 	lErrs := make(LoaderErrors)
@@ -117,14 +116,14 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 			manifest, hash, err := LoadManifest(absPluginRoot, "manifest.yaml")
 			if err != nil {
 				slog.Error("Failed to load manifest", slog.Any("err", err))
-				// if there is an error loading the manifest, add it to the LoaderErrors map
+				// if there is an error loading the manifest, Add it to the LoaderErrors map
 				lErrs.add(absPluginRoot, err)
-				// add the manifest to the manifests map (nil/"") to indicate that the manifest is invalid/missing
+				// Add the manifest to the manifests map (nil/"") to indicate that the manifest is invalid/missing
 				// this allows observability for improperly "installed" plugins
-				pl.manifests.add(absPluginRoot, NewManifestEntry(manifest, hash))
+				pl.manifests.Add(absPluginRoot, NewManifestEntry(manifest, hash))
 			}
-			// add the manifest to the manifest entry map
-			pl.manifests.add(absPluginRoot, NewManifestEntry(manifest, hash))
+			// Add the manifest to the manifest entry map
+			pl.manifests.Add(absPluginRoot, NewManifestEntry(manifest, hash))
 		}
 		return nil
 	})
@@ -138,7 +137,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 	return pl.manifests, lErrs
 }
 
-// GetManifests retrieves the collection of plugin manifests currently loaded by the PluginLoader.
+// GetManifests returns a reference to the loaded plugin manifests managed by the PluginLoader.
 func (pl *PluginLoader) GetManifests() *Manifests {
 	return pl.manifests
 }

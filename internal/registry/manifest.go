@@ -8,11 +8,15 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/hashicorp/go-plugin"
 	"gopkg.in/yaml.v3"
 )
 
-// Provides a way to load a manifest file from a given path. Manifests are used to describe a plugin.
-// Manifests can be written in YAML format or JSON format.
+var (
+	ErrInvalidProtocolVersion  = errors.New("invalid protocol version")
+	ErrInvalidMagicCookieKey   = errors.New("invalid magic cookie key")
+	ErrInvalidMagicCookieValue = errors.New("invalid magic cookie value")
+)
 
 // Manifest defines the structure for metadata about a plugin,
 // including details like name, type, version, and maintainer.
@@ -31,13 +35,13 @@ type Manifest struct {
 
 // Handshake represents a structure for plugin handshake configuration with protocol version and magic cookie details.
 type Handshake struct {
-	ProtocolVersion  int    `json:"protocol_version" yaml:"protocol_version"`
+	ProtocolVersion  uint   `json:"protocol_version" yaml:"protocol_version"`
 	MagicCookieKey   string `json:"magic_cookie_key" yaml:"magic_cookie_key"`
 	MagicCookieValue string `json:"magic_cookie_value" yaml:"magic_cookie_value"`
 }
 
-// LoadManifest reads a manifest file from a specified root and path, parses its YAML content, and returns the Manifest.
-// Returns an error if the root cannot be opened, the file cannot be read, or the YAML is invalid.
+// LoadManifest reads and parses a manifest file at the specified path, returning the parsed Manifest,
+// its hash, and any error.
 func LoadManifest(root, path string) (*Manifest, string, error) {
 	r, err := os.OpenRoot(root)
 	if err != nil {
@@ -85,13 +89,32 @@ func (m *Manifest) LogValue() slog.Value {
 		slog.String("description", m.PluginDescription),
 		slog.String("maintainer", m.PluginMaintainer),
 		slog.String("url", m.PluginURL),
-		slog.Group("handshake_config", slog.Int("protocol_version", m.Handshake.ProtocolVersion),
+		slog.Group("handshake_config", slog.Int("protocol_version", int(m.Handshake.ProtocolVersion)),
 			slog.String("magic_cookie_key", m.Handshake.MagicCookieKey),
 			slog.String("magic_cookie_value", m.Handshake.MagicCookieValue)),
 	)
 }
 
+// getMD5Hash computes the MD5 hash of the given byte slice and returns it as a hexadecimal string.
 func getMD5Hash(data []byte) string {
 	hash := md5.Sum(data)
 	return hex.EncodeToString(hash[:])
+}
+
+// ToConfig converts a Handshake instance into a HandshakeConfig, validating required fields for correctness.
+func (h Handshake) ToConfig() (*plugin.HandshakeConfig, error) {
+	if h.ProtocolVersion == 0 {
+		return nil, ErrInvalidProtocolVersion
+	}
+	if h.MagicCookieKey == "" {
+		return nil, ErrInvalidMagicCookieKey
+	}
+	if h.MagicCookieValue == "" {
+		return nil, ErrInvalidMagicCookieValue
+	}
+	return &plugin.HandshakeConfig{
+		ProtocolVersion:  h.ProtocolVersion,
+		MagicCookieKey:   h.MagicCookieKey,
+		MagicCookieValue: h.MagicCookieValue,
+	}, nil
 }

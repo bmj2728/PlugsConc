@@ -12,12 +12,18 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
+// pluginDir is the path to the directory containing the plugins.
+// This will be configurable in the future.
+var pluginDir = "./plugins"
+
+// generic handshake configuration for testing.
 var handshakeConfig = plugin.HandshakeConfig{
 	ProtocolVersion:  1,
 	MagicCookieKey:   "ANIMAL_PLUGIN",
 	MagicCookieValue: "hello",
 }
 
+// manually generated list to be replaced by dynamic discovery.
 var pluginMap = map[string]plugin.Plugin{
 	"dog":      &animal.AnimalPlugin{},
 	"dog-grpc": &animal.AnimalGRPCPlugin{},
@@ -52,6 +58,11 @@ func main() {
 	slog.Info("Plugins loaded", slog.Any("plugins", p.LogValue()))
 
 	for _, m := range p.GetManifests() {
+		config, err := m.Manifest().Handshake.ToConfig()
+		if err != nil {
+			slog.Error("Failed to convert manifest to config", slog.Any("err", err))
+		}
+		fmt.Println(config)
 		fmt.Println(m.Hash())
 	}
 

@@ -1,6 +1,6 @@
 # plugin manifest
 plugin_name: dog
-plugin_type: AnimalPlugin
+plugin_type: animal
 plugin_format: rpc
 plugin_language: go
 plugin_entrypoint: dog

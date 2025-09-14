@@ -1,6 +1,6 @@
 #plugin manifest
 plugin_name: pig
-plugin_type: Animal
+plugin_type: animal
 plugin_format: rpc
 plugin_language: go
 plugin_entrypoint: pig
