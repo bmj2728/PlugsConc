@@ -3,7 +3,7 @@ plugin_name: cow
 plugin_type: animal
 plugin_format: rpc
 plugin_language: go
-plugin_entrypoint: cow
+plugin_entrypoint: cow/cow
 plugin_version: 1.0.0
 plugin_description: This plugin is provides a cow implementation of the animal interface
 plugin_maintainer: Brian Jipson

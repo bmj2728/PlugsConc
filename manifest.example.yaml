@@ -5,7 +5,7 @@ plugin_name: hello-world
 
 # plugin_type is the type of plugin, this is used to determine how to handle the plugin
 # see the PluginType enum in the plugin.go file for available options
-plugin_type: AvailablePluginType
+plugin_type: available-type
 
 # plugin_format is the format of the plugin, this is used to determine how to handle the plugin: rpc, grpc
 plugin_format: rpc
@@ -16,7 +16,7 @@ plugin_language: go
 
 # plugin_entrypoint is the binary launched for the plugin
 # this should be located in the same directory as the manifest.yaml file
-plugin_entrypoint: hello-world
+plugin_entrypoint: hello-world/some-binary
 
 # plugin_version is the version of the plugin
 plugin_version: 1.0.0

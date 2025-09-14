@@ -3,7 +3,7 @@ plugin_name: dog-grpc
 plugin_type: animal-grpc
 plugin_format: grpc
 plugin_language: go
-plugin_entrypoint: dog
+plugin_entrypoint: dog-grpc/dog-grpc
 plugin_version: 1.0.0
 plugin_description: This plugin is provides a dog implementation of the animal interface
 plugin_maintainer: Brian Jipson

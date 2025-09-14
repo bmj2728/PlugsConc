@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
+
 	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
@@ -69,8 +71,18 @@ func main() {
 		if validType {
 			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginType)
 			pluginMapImported[m.Manifest().PluginName] = pt
-			fmt.Println(pt)
 		}
+		entrypoint, err := filepath.Abs(filepath.Join(pluginDir, m.Manifest().PluginEntrypoint))
+		if err != nil {
+			slog.Error("Failed to get absolute path", slog.Any("err", err))
+		}
+
+		validFormat := registry.AvailablePluginFormatLookup.IsValidFormat(m.Manifest().PluginFormat)
+		if validFormat {
+			pf := registry.AvailablePluginFormats.GetByString(m.Manifest().PluginFormat)
+			fmt.Println(pf)
+		}
+		fmt.Println(entrypoint)
 		fmt.Println(config)
 	}
 
@@ -97,11 +109,11 @@ func main() {
 	//	os.Exit(1)
 	//}
 	//woof := dog.(animal.Animal).Speak(true)
-	//
+
 	//pigClient := plugin.NewClient(&plugin.ClientConfig{
 	//	HandshakeConfig:  handshakeConfig,
 	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("./plugins/pig/pig"),
+	//	Cmd:              exec.Command("/home/brian/GolandProjects/PlugsConc/plugins/pig/pig"),
 	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
 	//})
 	//defer pigClient.Kill()
@@ -117,7 +129,7 @@ func main() {
 	//	slog.Error("Failed to dispense pig", slog.Any("err", err))
 	//}
 	//oink := pig.(animal.Animal).Speak(false)
-	//
+
 	//catClient := plugin.NewClient(&plugin.ClientConfig{
 	//	HandshakeConfig:  handshakeConfig,
 	//	Plugins:          pluginMap,

@@ -3,7 +3,7 @@ plugin_name: cat
 plugin_type: animal
 plugin_format: rpc
 plugin_language: go
-plugin_entrypoint: cat
+plugin_entrypoint: cat/cat
 plugin_version: 1.0.0
 plugin_description: This plugin is provides a cat implementation of the animal interface
 plugin_maintainer: Brian Jipson

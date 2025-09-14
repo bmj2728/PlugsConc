@@ -120,8 +120,7 @@ func (pf *PluginFormats) Get(format PluginFormat) []plugin.Protocol {
 func (pf *PluginFormats) GetByString(format string) []plugin.Protocol {
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
-	// todo
-	return nil
+	return pf.formats[AvailablePluginFormatLookup.GetPluginFormat(format)]
 }
 
 type PluginFormatLookup struct {
