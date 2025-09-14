@@ -6,6 +6,7 @@ toolchain go1.24.7
 
 require (
 	github.com/bmj2728/utils v0.3.2
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/hashicorp/go-plugin v1.7.0
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.9

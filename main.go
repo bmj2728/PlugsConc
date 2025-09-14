@@ -2,14 +2,18 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
+	"path/filepath"
+
 	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/registry"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/go-plugin"
 )
 
@@ -47,6 +51,38 @@ func main() {
 	slog.SetDefault(slog.New(logHandler))
 	slog.Info("Logger initialized")
 
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		slog.Error("Failed to create watcher", slog.Any(logger.KeyError, err))
+		slog.Warn("Watching for changes will not work")
+	}
+	defer func(watcher *fsnotify.Watcher) {
+		err := watcher.Close()
+		if err != nil {
+			slog.Error("Failed to close watcher", slog.Any(logger.KeyError, err))
+		}
+	}(watcher)
+
+	go func(watcher *fsnotify.Watcher) {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				log.Println("event:", event)
+				if event.Has(fsnotify.Write) {
+					log.Println("modified file:", event.Name)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}(watcher)
+
 	loader, err := registry.NewPluginLoader("./plugins")
 	if err != nil {
 		slog.Error("Failed to create plugin loader", slog.Any(logger.KeyError, err))
@@ -69,6 +105,15 @@ func main() {
 		if validType {
 			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginType)
 			pluginMapImported[m.Manifest().PluginName] = pt
+		}
+
+		pFolder, err := filepath.Abs(filepath.Join(pluginDir, m.Manifest().PluginName))
+		if err != nil {
+			slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
+		}
+		err = watcher.Add(pFolder)
+		if err != nil {
+			slog.Error("Failed to add watcher", slog.Any(logger.KeyError, err))
 		}
 
 		validFormat := registry.AvailablePluginFormatLookup.IsValidFormat(m.Manifest().PluginFormat)
@@ -209,4 +254,6 @@ func main() {
 	//fmt.Printf("The dog-grpc says %s\n", gWoof)
 	//
 	//plugin.CleanupClients()
+
+	<-make(chan struct{})
 }

@@ -76,6 +76,7 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 		return nil, "", "", err
 	}
 
+	// todo - check if entrypoint is valid executable
 	entrypoint = filepath.Join(root, m.PluginEntrypoint)
 
 	return m, entrypoint, hash, nil
