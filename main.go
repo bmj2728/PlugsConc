@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
-
 	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
@@ -51,12 +49,12 @@ func main() {
 
 	loader, err := registry.NewPluginLoader("./plugins")
 	if err != nil {
-		slog.Error("Failed to create plugin loader", slog.Any("err", err))
+		slog.Error("Failed to create plugin loader", slog.Any(logger.KeyError, err))
 		os.Exit(1)
 	}
 	p, e := loader.Load()
 	if len(e) > 0 {
-		slog.Error("Failed to load plugins", slog.Any("err", e))
+		slog.Error("Failed to load plugins", slog.Any(logger.KeyError, e))
 	}
 	slog.Info("Plugins loaded", slog.Any("plugins", p.LogValue()))
 
@@ -65,16 +63,12 @@ func main() {
 	for _, m := range p.GetManifests() {
 		config, err := m.Manifest().Handshake.ToConfig()
 		if err != nil {
-			slog.Error("Failed to convert manifest to config", slog.Any("err", err))
+			slog.Error("Failed to convert manifest to config", slog.Any(logger.KeyError, err))
 		}
 		validType := registry.AvailablePluginTypesLookup.IsValidPluginType(m.Manifest().PluginType)
 		if validType {
 			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginType)
 			pluginMapImported[m.Manifest().PluginName] = pt
-		}
-		entrypoint, err := filepath.Abs(filepath.Join(pluginDir, m.Manifest().PluginEntrypoint))
-		if err != nil {
-			slog.Error("Failed to get absolute path", slog.Any("err", err))
 		}
 
 		validFormat := registry.AvailablePluginFormatLookup.IsValidFormat(m.Manifest().PluginFormat)
@@ -82,7 +76,7 @@ func main() {
 			pf := registry.AvailablePluginFormats.GetByString(m.Manifest().PluginFormat)
 			fmt.Println(pf)
 		}
-		fmt.Println(entrypoint)
+		fmt.Println(m.Entrypoint())
 		fmt.Println(config)
 	}
 
@@ -99,13 +93,13 @@ func main() {
 	//
 	//rpcDogClient, err := dogClient.Client()
 	//if err != nil {
-	//	slog.Error("Failed to create dogClient", slog.Any("err", err))
+	//	slog.Error("Failed to create dogClient", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//
 	//dog, err := rpcDogClient.Dispense("dog")
 	//if err != nil {
-	//	slog.Error("Failed to dispense dog", slog.Any("err", err))
+	//	slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//woof := dog.(animal.Animal).Speak(true)
@@ -120,13 +114,13 @@ func main() {
 	//
 	//rpcPigClient, err := pigClient.Client()
 	//if err != nil {
-	//	slog.Error("Failed to create pigClient", slog.Any("err", err))
+	//	slog.Error("Failed to create pigClient", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//
 	//pig, err := rpcPigClient.Dispense("pig")
 	//if err != nil {
-	//	slog.Error("Failed to dispense pig", slog.Any("err", err))
+	//	slog.Error("Failed to dispense pig", slog.Any(logger.KeyError, err))
 	//}
 	//oink := pig.(animal.Animal).Speak(false)
 
@@ -140,13 +134,13 @@ func main() {
 	//
 	//rpcCatClient, err := catClient.Client()
 	//if err != nil {
-	//	slog.Error("Failed to create catClient", slog.Any("err", err))
+	//	slog.Error("Failed to create catClient", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//
 	//cat, err := rpcCatClient.Dispense("cat")
 	//if err != nil {
-	//	slog.Error("Failed to dispense cat", slog.Any("err", err))
+	//	slog.Error("Failed to dispense cat", slog.Any(logger.KeyError, err))
 	//}
 	//meow := cat.(animal.Animal).Speak(true)
 	//
@@ -160,12 +154,12 @@ func main() {
 	//
 	//rpcCowClient, err := cowClient.Client()
 	//if err != nil {
-	//	slog.Error("Failed to create cowClient", slog.Any("err", err))
+	//	slog.Error("Failed to create cowClient", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//cow, err := rpcCowClient.Dispense("cow")
 	//if err != nil {
-	//	slog.Error("Failed to dispense cow", slog.Any("err", err))
+	//	slog.Error("Failed to dispense cow", slog.Any(logger.KeyError, err))
 	//}
 	//moo := cow.(animal.Animal).Speak(true)
 	//
@@ -179,12 +173,12 @@ func main() {
 	//
 	//rpcHorseClient, err := horseClient.Client()
 	//if err != nil {
-	//	slog.Error("Failed to create horseClient", slog.Any("err", err))
+	//	slog.Error("Failed to create horseClient", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//horse, err := rpcHorseClient.Dispense("horse")
 	//if err != nil {
-	//	slog.Error("Failed to dispense horse", slog.Any("err", err))
+	//	slog.Error("Failed to dispense horse", slog.Any(logger.KeyError, err))
 	//}
 	//neigh := horse.(animal.Animal).Speak(false)
 	//
@@ -198,12 +192,12 @@ func main() {
 	//
 	//rpcGDogClient, err := gDogClient.Client()
 	//if err != nil {
-	//	slog.Error("Failed to create gDogClient", slog.Any("err", err))
+	//	slog.Error("Failed to create gDogClient", slog.Any(logger.KeyError, err))
 	//	os.Exit(1)
 	//}
 	//gDog, err := rpcGDogClient.Dispense("dog-grpc")
 	//if err != nil {
-	//	slog.Error("Failed to dispense dog", slog.Any("err", err))
+	//	slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
 	//}
 	//gWoof := gDog.(animal.Animal).Speak(false)
 	//

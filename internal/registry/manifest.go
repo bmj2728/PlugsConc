@@ -7,7 +7,9 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"path/filepath"
 
+	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/hashicorp/go-plugin"
 	"gopkg.in/yaml.v3"
 )
@@ -42,18 +44,18 @@ type Handshake struct {
 
 // LoadManifest reads and parses a manifest file at the specified path, returning the parsed Manifest,
 // its hash, and any error.
-func LoadManifest(root, path string) (*Manifest, string, error) {
+func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash string, err error) {
 	r, err := os.OpenRoot(root)
 	if err != nil {
 		err := errors.Join(ErrLoadingFS, err)
-		slog.Error("Failed to load plugin root", slog.Any("err", err))
-		return nil, "", err
+		slog.Error("Failed to load plugin root", slog.Any(logger.KeyError, err))
+		return nil, "", "", err
 	}
 	defer func(r *os.Root) {
 		err := r.Close()
 		if err != nil {
 			err := errors.Join(ErrClosingFS, err)
-			slog.Error("Failed to close root", slog.Any("err", err))
+			slog.Error("Failed to close root", slog.Any(logger.KeyError, err))
 		}
 	}(r)
 
@@ -62,20 +64,21 @@ func LoadManifest(root, path string) (*Manifest, string, error) {
 	f, err := fs.ReadFile(rootFS, path)
 	if err != nil {
 		err := errors.Join(ErrReadingFile, err)
-		slog.Error("Failed to load manifest", slog.Any("err", err))
-		return nil, "", err
+		slog.Error("Failed to load manifest", slog.Any(logger.KeyError, err))
+		return nil, "", "", err
 	}
 
-	hash := getMD5Hash(f)
+	hash = getMD5Hash(f)
 
-	var manifest Manifest
-	if err := yaml.Unmarshal(f, &manifest); err != nil {
+	if err := yaml.Unmarshal(f, &m); err != nil {
 		err := errors.Join(ErrYAMLUnmarshaling, err)
-		slog.Error("Failed to unmarshall manifest", slog.Any("err", err))
-		return nil, hash, err
+		slog.Error("Failed to unmarshall manifest", slog.Any(logger.KeyError, err))
+		return nil, "", "", err
 	}
 
-	return &manifest, hash, nil
+	entrypoint = filepath.Join(root, m.PluginEntrypoint)
+
+	return m, entrypoint, hash, nil
 }
 
 // LogValue converts the Manifest's metadata into a structured slog.Value for logging purposes.

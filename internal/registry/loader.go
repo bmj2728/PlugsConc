@@ -21,6 +21,10 @@ var (
 	ErrYAMLUnmarshaling  = errors.New("failed to unmarshal YAML")
 )
 
+const (
+	ManifestFileName = "manifest.yaml"
+)
+
 // LoaderErrors is a map that associates a directory with the load error that occurred during its loading process.
 type LoaderErrors map[string]error
 
@@ -70,7 +74,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 	root, err := os.OpenRoot(pl.path)
 	if err != nil {
 		err = errors.Join(ErrInvalidPluginPath, err)
-		slog.Error("Failed to open root", slog.Any("err", err))
+		slog.Error("Failed to open root", slog.Any(logger.KeyError, err))
 		lErrs.add(pl.path, err)
 		return pl.manifests, lErrs
 	}
@@ -78,7 +82,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 		err := root.Close()
 		if err != nil {
 			err = errors.Join(ErrClosingFS, err)
-			slog.Error("Failed to close root", slog.Any("err", err))
+			slog.Error("Failed to close root", slog.Any(logger.KeyError, err))
 			lErrs.add(pl.path, err)
 		}
 	}(root)
@@ -91,10 +95,10 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 		}
 		if err != nil && d.IsDir() {
 			err = errors.Join(ErrInvalidPluginPath, err)
-			slog.Error("Failed to walk directory", slog.Any("err", err))
+			slog.Error("Failed to walk directory", slog.Any(logger.KeyError, err))
 			absPath, pathErr := filepath.Abs(filepath.Join(pl.path, path))
 			if pathErr != nil {
-				slog.Error("Failed to get absolute path", slog.Any("err", err))
+				slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
 			}
 			if absPath != "" {
 				lErrs.add(absPath, err)
@@ -109,27 +113,27 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 		if d.IsDir() {
 			absPluginRoot, absErr := filepath.Abs(filepath.Join(pl.path, path))
 			if absErr != nil {
-				slog.Error("Failed to get absolute path", slog.Any("err", err))
+				slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
 				// if there is an error getting the absolute path, try to use the relative path instead
 				absPluginRoot = filepath.Join(pl.path, path)
 			}
-			manifest, hash, err := LoadManifest(absPluginRoot, "manifest.yaml")
+			manifest, entrypoint, hash, err := LoadManifest(absPluginRoot, ManifestFileName)
 			if err != nil {
-				slog.Error("Failed to load manifest", slog.Any("err", err))
+				slog.Error("Failed to load manifest", slog.Any(logger.KeyError, err))
 				// if there is an error loading the manifest, Add it to the LoaderErrors map
 				lErrs.add(absPluginRoot, err)
 				// Add the manifest to the manifests map (nil/"") to indicate that the manifest is invalid/missing
 				// this allows observability for improperly "installed" plugins
-				pl.manifests.Add(absPluginRoot, NewManifestEntry(manifest, hash))
+				pl.manifests.Add(absPluginRoot, NewManifestEntry(manifest, entrypoint, hash))
 			}
 			// Add the manifest to the manifest entry map
-			pl.manifests.Add(absPluginRoot, NewManifestEntry(manifest, hash))
+			pl.manifests.Add(absPluginRoot, NewManifestEntry(manifest, entrypoint, hash))
 		}
 		return nil
 	})
 	if err != nil {
 		err = errors.Join(ErrLoadingFS, err)
-		slog.Error("Failed to load plugins", slog.Any("err", err))
+		slog.Error("Failed to load plugins", slog.Any(logger.KeyError, err))
 		lErrs.add(pl.path, err)
 		return pl.manifests, lErrs
 	}

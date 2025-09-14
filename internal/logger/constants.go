@@ -56,4 +56,7 @@ const (
 	KeyPluginLoadErrors = "plugin_load_errors"
 	// KeyPluginMap is a constant key used to store or retrieve the plugin map from context or logging operations.
 	KeyPluginMap = "plugin_map"
+
+	// KeyError represents the constant string key used for storing or identifying errors within the system.
+	KeyError = "err"
 )

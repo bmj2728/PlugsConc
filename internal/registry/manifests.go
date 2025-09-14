@@ -11,15 +11,17 @@ import (
 
 // ManifestEntry represents an entry containing a plugin's manifest and associated hash for identifying integrity.
 type ManifestEntry struct {
-	entry *Manifest
-	hash  string
+	entry      *Manifest
+	entrypoint string
+	hash       string
 }
 
 // NewManifestEntry creates a new ManifestEntry instance, associating a manifest with its corresponding hash.
-func NewManifestEntry(manifest *Manifest, hash string) *ManifestEntry {
+func NewManifestEntry(manifest *Manifest, entrypoint string, hash string) *ManifestEntry {
 	return &ManifestEntry{
-		entry: manifest,
-		hash:  hash,
+		entry:      manifest,
+		entrypoint: entrypoint,
+		hash:       hash,
 	}
 }
 
@@ -31,6 +33,10 @@ func (m *ManifestEntry) Manifest() *Manifest {
 // Hash returns the hash value associated with the ManifestEntry.
 func (m *ManifestEntry) Hash() string {
 	return m.hash
+}
+
+func (m *ManifestEntry) Entrypoint() string {
+	return m.entrypoint
 }
 
 // LogValue returns a slog.Value representing the loggable structure of the associated Manifest
