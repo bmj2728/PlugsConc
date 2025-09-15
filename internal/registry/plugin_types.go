@@ -54,6 +54,8 @@ func (pt *PluginTypes) Get(pluginType PluginType) plugin.Plugin {
 func (pt *PluginTypes) GetByString(pluginType string) plugin.Plugin {
 	pt.mu.RLock()
 	defer pt.mu.RUnlock()
+	AvailablePluginTypesLookup.mu.RLock()
+	defer AvailablePluginTypesLookup.mu.RUnlock()
 	if AvailablePluginTypesLookup.IsValidPluginType(pluginType) {
 		return pt.types[AvailablePluginTypesLookup.GetPluginType(pluginType)]
 	} else {

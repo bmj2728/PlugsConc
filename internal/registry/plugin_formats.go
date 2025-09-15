@@ -40,6 +40,8 @@ func (pf *PluginFormats) Get(format PluginFormat) []plugin.Protocol {
 func (pf *PluginFormats) GetByString(format string) []plugin.Protocol {
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
+	AvailablePluginFormatLookup.mu.RLock()
+	defer AvailablePluginFormatLookup.mu.RUnlock()
 	return pf.formats[AvailablePluginFormatLookup.GetPluginFormat(format)]
 }
 
@@ -68,6 +70,8 @@ func (pfl *PluginFormatLookup) GetPluginFormat(format string) PluginFormat {
 // IsValidFormat checks if the provided format string exists as a key in the PluginFormatLookup map.
 // Returns true if valid.
 func (pfl *PluginFormatLookup) IsValidFormat(format string) bool {
+	pfl.mu.RLock()
+	defer pfl.mu.RUnlock()
 	_, ok := pfl.formats[format]
 	return ok
 }
