@@ -22,7 +22,9 @@
 - manifests are hashed on load to quickly identify changes
 - manifests are stored in a map keyed by the directory path
 - future state will allow plugins to be loaded dynamically using fsnotify
-
+- consider plugin config files to be stored as sidecars to the plugin binary
+- security 
+ 
 ## Concurrency
 
 - Research concurrent file system ops using os.Root.FS()'s fs.FS object
@@ -30,3 +32,8 @@
 - we currently create a new os.Root for each plugin while processing the manifest 
 - I think this should ensure thread-safety
 - the map can then be processed concurrently with no concerns as the data is in the manifest objects
+
+## Filewatcher
+- basic filewatcher using fsnotify is working
+- this should be configurable
+- consider making the filewatcher a plugin (bi-directional)

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
@@ -103,6 +104,24 @@ func (m *Manifest) LogValue() slog.Value {
 func getMD5Hash(data []byte) string {
 	hash := md5.Sum(data)
 	return hex.EncodeToString(hash[:])
+}
+
+func (m *Manifest) ToLaunchDetails() *PluginLaunchDetails {
+	var ld PluginLaunchDetails
+	ld.name = m.PluginName
+	hc, err := m.Handshake.ToConfig()
+	if err != nil {
+		slog.Error("Failed to load plugin launch details", slog.Any(logger.KeyError, err))
+		return nil
+	}
+	ld.handshakeConfig = hc
+	ld.cmd = exec.Command(m.PluginEntrypoint)
+	validFormat := AvailablePluginFormatLookup.IsValidFormat(m.PluginFormat)
+	if validFormat {
+		pf := AvailablePluginFormats.GetByString(m.PluginFormat)
+		ld.allowedProtocols = pf
+	}
+	return &ld
 }
 
 // ToConfig converts a Handshake instance into a HandshakeConfig, validating required fields for correctness.

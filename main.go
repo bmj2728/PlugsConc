@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	//"os/exec"
@@ -40,6 +41,7 @@ var pluginMap = map[string]plugin.Plugin{
 
 func main() {
 
+	// Initialize logger
 	logHandler := logger.New(os.Stdout,
 		&logger.Options{
 			Level:     slog.LevelInfo,
@@ -51,6 +53,7 @@ func main() {
 	slog.SetDefault(slog.New(logHandler))
 	slog.Info("Logger initialized")
 
+	// Initialize plugin filewatcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		slog.Error("Failed to create watcher", slog.Any(logger.KeyError, err))
@@ -63,6 +66,8 @@ func main() {
 		}
 	}(watcher)
 
+	// Start generic watcher
+	// sig
 	go func(watcher *fsnotify.Watcher) {
 		for {
 			select {
@@ -72,18 +77,30 @@ func main() {
 				}
 				log.Println("event:", event)
 				if event.Has(fsnotify.Write) {
-					log.Println("modified file:", event.Name)
+					slog.Info("file changed:", slog.String("file", event.Name))
+				}
+				if event.Has(fsnotify.Create) {
+					slog.Info("file created:", slog.String("file", event.Name))
+				}
+				if event.Has(fsnotify.Remove) {
+					slog.Info("file removed:", slog.String("file", event.Name))
+				}
+				if event.Has(fsnotify.Rename) {
+					slog.Info("file renamed:", slog.String("file", event.Name))
+				}
+				if event.Has(fsnotify.Chmod) {
+					slog.Info("file mode changed:", slog.String("file", event.Name))
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				log.Println("error:", err)
+				slog.Error("filewatcher error: ", slog.Any(logger.KeyError, err))
 			}
 		}
 	}(watcher)
 
-	loader, err := registry.NewPluginLoader("./plugins")
+	loader, err := registry.NewPluginLoader(pluginDir)
 	if err != nil {
 		slog.Error("Failed to create plugin loader", slog.Any(logger.KeyError, err))
 		os.Exit(1)
@@ -97,10 +114,8 @@ func main() {
 	var pluginMapImported = make(map[string]plugin.Plugin)
 
 	for _, m := range p.GetManifests() {
-		config, err := m.Manifest().Handshake.ToConfig()
-		if err != nil {
-			slog.Error("Failed to convert manifest to config", slog.Any(logger.KeyError, err))
-		}
+
+		// map
 		validType := registry.AvailablePluginTypesLookup.IsValidPluginType(m.Manifest().PluginType)
 		if validType {
 			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginType)
@@ -116,144 +131,59 @@ func main() {
 			slog.Error("Failed to add watcher", slog.Any(logger.KeyError, err))
 		}
 
-		validFormat := registry.AvailablePluginFormatLookup.IsValidFormat(m.Manifest().PluginFormat)
-		if validFormat {
-			pf := registry.AvailablePluginFormats.GetByString(m.Manifest().PluginFormat)
-			fmt.Println(pf)
-		}
+		ld := m.Manifest().ToLaunchDetails()
 		fmt.Println(m.Entrypoint())
-		fmt.Println(config)
+		fmt.Println(ld.Cmd())
+
 	}
 
 	fmt.Println(pluginMapImported)
 	fmt.Println(pluginMap)
 
-	//dogClient := plugin.NewClient(&plugin.ClientConfig{
-	//	HandshakeConfig:  handshakeConfig,
-	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("./plugins/dog/dog"),
-	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
-	//})
-	//defer dogClient.Kill()
-	//
-	//rpcDogClient, err := dogClient.Client()
-	//if err != nil {
-	//	slog.Error("Failed to create dogClient", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//
-	//dog, err := rpcDogClient.Dispense("dog")
-	//if err != nil {
-	//	slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//woof := dog.(animal.Animal).Speak(true)
+	dogClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/dog/dog"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+	})
+	defer dogClient.Kill()
 
-	//pigClient := plugin.NewClient(&plugin.ClientConfig{
-	//	HandshakeConfig:  handshakeConfig,
-	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("/home/brian/GolandProjects/PlugsConc/plugins/pig/pig"),
-	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
-	//})
-	//defer pigClient.Kill()
-	//
-	//rpcPigClient, err := pigClient.Client()
-	//if err != nil {
-	//	slog.Error("Failed to create pigClient", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//
-	//pig, err := rpcPigClient.Dispense("pig")
-	//if err != nil {
-	//	slog.Error("Failed to dispense pig", slog.Any(logger.KeyError, err))
-	//}
-	//oink := pig.(animal.Animal).Speak(false)
+	rpcDogClient, err := dogClient.Client()
+	if err != nil {
+		slog.Error("Failed to create dogClient", slog.Any(logger.KeyError, err))
+		os.Exit(1)
+	}
 
-	//catClient := plugin.NewClient(&plugin.ClientConfig{
-	//	HandshakeConfig:  handshakeConfig,
-	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("./plugins/cat/cat"),
-	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
-	//})
-	//defer catClient.Kill()
-	//
-	//rpcCatClient, err := catClient.Client()
-	//if err != nil {
-	//	slog.Error("Failed to create catClient", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//
-	//cat, err := rpcCatClient.Dispense("cat")
-	//if err != nil {
-	//	slog.Error("Failed to dispense cat", slog.Any(logger.KeyError, err))
-	//}
-	//meow := cat.(animal.Animal).Speak(true)
-	//
-	//cowClient := plugin.NewClient(&plugin.ClientConfig{
-	//	HandshakeConfig:  handshakeConfig,
-	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("./plugins/cow/cow"),
-	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
-	//})
-	//defer cowClient.Kill()
-	//
-	//rpcCowClient, err := cowClient.Client()
-	//if err != nil {
-	//	slog.Error("Failed to create cowClient", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//cow, err := rpcCowClient.Dispense("cow")
-	//if err != nil {
-	//	slog.Error("Failed to dispense cow", slog.Any(logger.KeyError, err))
-	//}
-	//moo := cow.(animal.Animal).Speak(true)
-	//
-	//horseClient := plugin.NewClient(&plugin.ClientConfig{
-	//	HandshakeConfig:  handshakeConfig,
-	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("./plugins/horse/horse"),
-	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC}, // add plugin.ProtocolGRPC
-	//})
-	//defer horseClient.Kill()
-	//
-	//rpcHorseClient, err := horseClient.Client()
-	//if err != nil {
-	//	slog.Error("Failed to create horseClient", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//horse, err := rpcHorseClient.Dispense("horse")
-	//if err != nil {
-	//	slog.Error("Failed to dispense horse", slog.Any(logger.KeyError, err))
-	//}
-	//neigh := horse.(animal.Animal).Speak(false)
-	//
-	//gDogClient := plugin.NewClient(&plugin.ClientConfig{
-	//	HandshakeConfig:  handshakeConfig,
-	//	Plugins:          pluginMap,
-	//	Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
-	//	AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
-	//})
-	//defer gDogClient.Kill()
-	//
-	//rpcGDogClient, err := gDogClient.Client()
-	//if err != nil {
-	//	slog.Error("Failed to create gDogClient", slog.Any(logger.KeyError, err))
-	//	os.Exit(1)
-	//}
-	//gDog, err := rpcGDogClient.Dispense("dog-grpc")
-	//if err != nil {
-	//	slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
-	//}
-	//gWoof := gDog.(animal.Animal).Speak(false)
-	//
-	//fmt.Printf("The dog says %s\n", woof)
-	//fmt.Printf("The pig says %s\n", oink)
-	//fmt.Printf("The cat says %s\n", meow)
-	//fmt.Printf("The cow says %s\n", moo)
-	//fmt.Printf("The horse says %s\n", neigh)
-	//fmt.Printf("The dog-grpc says %s\n", gWoof)
-	//
-	//plugin.CleanupClients()
+	dog, err := rpcDogClient.Dispense("dog")
+	if err != nil {
+		slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
+		os.Exit(1)
+	}
+	woof := dog.(animal.Animal).Speak(true)
+
+	gDogClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig:  handshakeConfig,
+		Plugins:          pluginMap,
+		Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
+		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+	})
+	defer gDogClient.Kill()
+
+	rpcGDogClient, err := gDogClient.Client()
+	if err != nil {
+		slog.Error("Failed to create gDogClient", slog.Any(logger.KeyError, err))
+		os.Exit(1)
+	}
+	gDog, err := rpcGDogClient.Dispense("dog-grpc")
+	if err != nil {
+		slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
+	}
+	gWoof := gDog.(animal.Animal).Speak(false)
+
+	fmt.Printf("The dog says %s\n", woof)
+	fmt.Printf("The dog-grpc says %s\n", gWoof)
+
+	plugin.CleanupClients()
 
 	<-make(chan struct{})
 }
