@@ -1,15 +1,18 @@
 #plugin manifest
-plugin_name: cat
-plugin_type: animal
-plugin_format: rpc
-plugin_language: go
-plugin_entrypoint: cat
-plugin_version: 1.0.0
-plugin_description: This plugin is provides a cat implementation of the animal interface
-plugin_maintainer: Brian Jipson
-plugin_url: https://github.com/bmj2728/cat-plugin
+plugin:
+  name: cat
+  type: animal
+  format: rpc
+  entrypoint: cat
+  language: go
+  version: 1.0.0
+about:
+  description: This plugin is provides a cat implementation of the animal interface
+  maintainer: Brian Jipson
+  url: https://github.com/bmj2728/cat-plugin
 handshake:
   protocol_version: 1
   magic_cookie_key: CAT_PLUGIN
   magic_cookie_value: lFLmoCE3ckw6erJxYxcRd6keedUodVMctD3XOGj9bLMYsFZi1Qh0vKEJftppo5ek
-  
+security:
+  auto_mtls: true

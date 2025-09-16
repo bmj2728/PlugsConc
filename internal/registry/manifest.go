@@ -24,16 +24,25 @@ var (
 // Manifest defines the structure for metadata about a plugin,
 // including details like name, type, version, and maintainer.
 type Manifest struct {
-	PluginName        string    `json:"plugin_name" yaml:"plugin_name"`
-	PluginType        string    `json:"plugin_type" yaml:"plugin_type"`
-	PluginFormat      string    `json:"plugin_format" yaml:"plugin_format"`
-	PluginLanguage    string    `json:"plugin_language" yaml:"plugin_language"`
-	PluginEntrypoint  string    `json:"plugin_entrypoint" yaml:"plugin_entrypoint"`
-	PluginVersion     string    `json:"plugin_version" yaml:"plugin_version"`
-	PluginDescription string    `json:"plugin_description" yaml:"plugin_description"`
-	PluginMaintainer  string    `json:"plugin_maintainer" yaml:"plugin_maintainer"`
-	PluginURL         string    `json:"plugin_url" yaml:"plugin_url"`
-	Handshake         Handshake `json:"handshake" yaml:"handshake"`
+	PluginData PluginData `json:"plugin" yaml:"plugin"`
+	About      About      `json:"about" yaml:"about"`
+	Handshake  Handshake  `json:"handshake" yaml:"handshake"`
+	Security   Security   `json:"security" yaml:"security"`
+}
+
+type PluginData struct {
+	Name       string `json:"name" yaml:"name"`
+	Type       string `json:"type" yaml:"type"`
+	Format     string `json:"format" yaml:"format"`
+	Entrypoint string `json:"entrypoint" yaml:"entrypoint"`
+	Language   string `json:"language" yaml:"language"`
+	Version    string `json:"version" yaml:"version"`
+}
+
+type About struct {
+	Description string `json:"description" yaml:"description"`
+	Maintainer  string `json:"maintainer" yaml:"maintainer"`
+	URL         string `json:"url" yaml:"url"`
 }
 
 // Handshake represents a structure for plugin handshake configuration with protocol version and magic cookie details.
@@ -41,6 +50,11 @@ type Handshake struct {
 	ProtocolVersion  uint   `json:"protocol_version" yaml:"protocol_version"`
 	MagicCookieKey   string `json:"magic_cookie_key" yaml:"magic_cookie_key"`
 	MagicCookieValue string `json:"magic_cookie_value" yaml:"magic_cookie_value"`
+}
+
+// Security represents configuration related to security features, including automatic mutual TLS (Transport Layer Security).
+type Security struct {
+	AutoMTLS bool `json:"auto_mtls" yaml:"auto_mtls"`
 }
 
 // LoadManifest reads and parses a manifest file at the specified path, returning the parsed Manifest,
@@ -78,25 +92,26 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 	}
 
 	// todo - check if entrypoint is valid executable
-	entrypoint = filepath.Join(root, m.PluginEntrypoint)
+	entrypoint = filepath.Join(root, m.PluginData.Entrypoint)
 
 	return m, entrypoint, hash, nil
 }
 
 // LogValue converts the Manifest's metadata into a structured slog.Value for logging purposes.
 func (m *Manifest) LogValue() slog.Value {
-	return slog.GroupValue(slog.String("name", m.PluginName),
-		slog.String("version", m.PluginVersion),
-		slog.String("type", m.PluginType),
-		slog.String("format", m.PluginFormat),
-		slog.String("language", m.PluginLanguage),
-		slog.String("entrypoint", m.PluginEntrypoint),
-		slog.String("description", m.PluginDescription),
-		slog.String("maintainer", m.PluginMaintainer),
-		slog.String("url", m.PluginURL),
+	return slog.GroupValue(slog.Group("plugin", slog.String("name", m.PluginData.Name),
+		slog.String("version", m.PluginData.Version),
+		slog.String("type", m.PluginData.Type),
+		slog.String("format", m.PluginData.Format),
+		slog.String("language", m.PluginData.Language),
+		slog.String("entrypoint", m.PluginData.Entrypoint)),
+		slog.Group("about", slog.String("description", m.About.Description),
+			slog.String("maintainer", m.About.Maintainer),
+			slog.String("url", m.About.URL)),
 		slog.Group("handshake_config", slog.Int("protocol_version", int(m.Handshake.ProtocolVersion)),
 			slog.String("magic_cookie_key", m.Handshake.MagicCookieKey),
 			slog.String("magic_cookie_value", m.Handshake.MagicCookieValue)),
+		slog.Group("security", slog.Bool("auto_mtls", m.Security.AutoMTLS)),
 	)
 }
 
@@ -108,19 +123,20 @@ func getMD5Hash(data []byte) string {
 
 func (m *Manifest) ToLaunchDetails() *PluginLaunchDetails {
 	var ld PluginLaunchDetails
-	ld.name = m.PluginName
+	ld.name = m.PluginData.Name
 	hc, err := m.Handshake.ToConfig()
 	if err != nil {
 		slog.Error("Failed to load plugin launch details", slog.Any(logger.KeyError, err))
 		return nil
 	}
 	ld.handshakeConfig = hc
-	ld.cmd = exec.Command(m.PluginEntrypoint)
-	validFormat := AvailablePluginFormatLookup.IsValidFormat(m.PluginFormat)
+	ld.cmd = exec.Command(m.PluginData.Entrypoint)
+	validFormat := AvailablePluginFormatLookup.IsValidFormat(m.PluginData.Format)
 	if validFormat {
-		pf := AvailablePluginFormats.GetByString(m.PluginFormat)
+		pf := AvailablePluginFormats.GetByString(m.PluginData.Format)
 		ld.allowedProtocols = pf
 	}
+	ld.AutoMTLS = m.Security.AutoMTLS
 	return &ld
 }
 

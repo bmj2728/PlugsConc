@@ -101,18 +101,21 @@ type PluginLaunchDetails struct {
 	handshakeConfig  *plugin.HandshakeConfig
 	cmd              *exec.Cmd
 	allowedProtocols []plugin.Protocol
+	AutoMTLS         bool
 }
 
 // NewPluginLaunchDetails initializes a new PluginLaunchDetails instance with the specified parameters.
 func NewPluginLaunchDetails(name string,
 	handshakeConfig *plugin.HandshakeConfig,
 	cmd *exec.Cmd,
-	allowedProtocols []plugin.Protocol) *PluginLaunchDetails {
+	allowedProtocols []plugin.Protocol,
+	autoMTLS bool) *PluginLaunchDetails {
 	return &PluginLaunchDetails{
 		name:             name,
 		handshakeConfig:  handshakeConfig,
 		cmd:              cmd,
 		allowedProtocols: allowedProtocols,
+		AutoMTLS:         autoMTLS,
 	}
 }
 

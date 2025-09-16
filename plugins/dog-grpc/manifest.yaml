@@ -1,14 +1,18 @@
 # plugin manifest
-plugin_name: dog-grpc
-plugin_type: animal-grpc
-plugin_format: grpc
-plugin_language: go
-plugin_entrypoint: dog-grpc
-plugin_version: 1.0.0
-plugin_description: This plugin is provides a dog implementation of the animal interface
-plugin_maintainer: Brian Jipson
-plugin_url: https://github.com/bmj2728/dog-plugin
+plugin:
+  name: dog-grpc
+  type: animal-grpc
+  format: grpc
+  language: go
+  entrypoint: dog-grpc
+  version: 1.0.0
+about:
+  description: This plugin is provides a dog implementation of the animal interface
+  maintainer: Brian Jipson
+  url: https://github.com/bmj2728/dog-plugin
 handshake:
   protocol_version: 1
   magic_cookie_key: DOG_PLUGIN
   magic_cookie_value: 2ggRd5S9bhHottawB6eXwghiOAhekGORmOfIczh5b1D3AYlmrRWIXdbqwDHDJmjq
+security:
+  auto_mtls: true

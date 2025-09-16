@@ -116,13 +116,13 @@ func main() {
 	for _, m := range p.GetManifests() {
 
 		// map
-		validType := registry.AvailablePluginTypesLookup.IsValidPluginType(m.Manifest().PluginType)
+		validType := registry.AvailablePluginTypesLookup.IsValidPluginType(m.Manifest().PluginData.Type)
 		if validType {
-			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginType)
-			pluginMapImported[m.Manifest().PluginName] = pt
+			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginData.Type)
+			pluginMapImported[m.Manifest().PluginData.Name] = pt
 		}
 
-		pFolder, err := filepath.Abs(filepath.Join(pluginDir, m.Manifest().PluginName))
+		pFolder, err := filepath.Abs(filepath.Join(pluginDir, m.Manifest().PluginData.Name))
 		if err != nil {
 			slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
 		}
@@ -145,6 +145,7 @@ func main() {
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/dog/dog"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
+		AutoMTLS:         true,
 	})
 	defer dogClient.Kill()
 
@@ -166,6 +167,7 @@ func main() {
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+		AutoMTLS:         true,
 	})
 	defer gDogClient.Kill()
 
