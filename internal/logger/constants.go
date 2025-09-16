@@ -56,7 +56,45 @@ const (
 	KeyPluginLoadErrors = "plugin_load_errors"
 	// KeyPluginMap is a constant key used to store or retrieve the plugin map from context or logging operations.
 	KeyPluginMap = "plugin_map"
-
 	// KeyError represents the constant string key used for storing or identifying errors within the system.
 	KeyError = "err"
+	// KeyGroupPlugin represents the grouping key for plugin-specific metadata and attributes in logging or
+	// configuration.
+	KeyGroupPlugin = "plugin"
+	// KeyPluginType represents the type of a plugin within the system, used to classify plugins by their functional
+	// category.
+	KeyPluginType = "type"
+	// KeyPluginName represents the key identifier for a plugin's name field in logging or metadata structures.
+	KeyPluginName = "name"
+	// KeyPluginVersion represents the version of the plugin as a string constant.
+	KeyPluginVersion = "version"
+	// KeyPluginFormat represents the format of the plugin (e.g., binary, script, etc.).
+	KeyPluginFormat = "format"
+	// KeyPluginLanguage represents the programming language used by the plugin, such as "Go", "Python", or "Java".
+	KeyPluginLanguage = "language"
+	// KeyPluginEntrypoint defines the entrypoint for a plugin, specifying the executable or script to initialize it.
+	KeyPluginEntrypoint = "entrypoint"
+	// KeyGroupAbout defines the constant value used as a key for organizing plugin metadata about description,
+	// maintainer, and URL.
+	KeyGroupAbout = "about"
+	// KeyPluginDescription represents the key for a plugin's description in metadata or structured logging.
+	KeyPluginDescription = "description"
+	// KeyPluginMaintainer represents the maintainer of the plugin as a string constant.
+	KeyPluginMaintainer = "maintainer"
+	// KeyPluginURL is used to reference the URL providing additional information about the plugin.
+	KeyPluginURL = "url"
+	// KeyGroupHandshakeConfig represents the group key for handshake configuration constants in the plugin metadata.
+	KeyGroupHandshakeConfig = "handshake_config"
+	// KeyHandshakeProtocolVersion is the key used to define the protocol version in the handshake configuration.
+	KeyHandshakeProtocolVersion = "protocol_version"
+	// KeyHandshakeMagicCookieKey represents the key used to identify the handshake magic cookie in plugin
+	// configuration.
+	KeyHandshakeMagicCookieKey = "magic_cookie_key"
+	// KeyHandshakeMagicCookieValue represents the constant key for the handshake magic cookie value used during plugin
+	// communication.
+	KeyHandshakeMagicCookieValue = "magic_cookie_value"
+	// KeyGroupSecurity represents a constant key for grouping security-related information in structured logging or data.
+	KeyGroupSecurity = "security"
+	// KeyPluginAutoMTLS represents the configuration key for enabling or disabling automatic mTLS in plugins.
+	KeyPluginAutoMTLS = "auto_mtls"
 )

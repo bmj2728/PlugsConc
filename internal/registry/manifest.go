@@ -99,19 +99,20 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 
 // LogValue converts the Manifest's metadata into a structured slog.Value for logging purposes.
 func (m *Manifest) LogValue() slog.Value {
-	return slog.GroupValue(slog.Group("plugin", slog.String("name", m.PluginData.Name),
-		slog.String("version", m.PluginData.Version),
-		slog.String("type", m.PluginData.Type),
-		slog.String("format", m.PluginData.Format),
-		slog.String("language", m.PluginData.Language),
-		slog.String("entrypoint", m.PluginData.Entrypoint)),
-		slog.Group("about", slog.String("description", m.About.Description),
-			slog.String("maintainer", m.About.Maintainer),
-			slog.String("url", m.About.URL)),
-		slog.Group("handshake_config", slog.Int("protocol_version", int(m.Handshake.ProtocolVersion)),
-			slog.String("magic_cookie_key", m.Handshake.MagicCookieKey),
-			slog.String("magic_cookie_value", m.Handshake.MagicCookieValue)),
-		slog.Group("security", slog.Bool("auto_mtls", m.Security.AutoMTLS)),
+	return slog.GroupValue(slog.Group(logger.KeyGroupPlugin,
+		slog.String(logger.KeyPluginName, m.PluginData.Name),
+		slog.String(logger.KeyPluginVersion, m.PluginData.Version),
+		slog.String(logger.KeyPluginType, m.PluginData.Type),
+		slog.String(logger.KeyPluginFormat, m.PluginData.Format),
+		slog.String(logger.KeyPluginLanguage, m.PluginData.Language),
+		slog.String(logger.KeyPluginEntrypoint, m.PluginData.Entrypoint)),
+		slog.Group(logger.KeyGroupAbout, slog.String(logger.KeyPluginDescription, m.About.Description),
+			slog.String(logger.KeyPluginMaintainer, m.About.Maintainer),
+			slog.String(logger.KeyPluginURL, m.About.URL)),
+		slog.Group(logger.KeyGroupHandshakeConfig, slog.Int(logger.KeyHandshakeProtocolVersion, int(m.Handshake.ProtocolVersion)),
+			slog.String(logger.KeyHandshakeMagicCookieKey, m.Handshake.MagicCookieKey),
+			slog.String(logger.KeyHandshakeMagicCookieValue, m.Handshake.MagicCookieValue)),
+		slog.Group(logger.KeyGroupSecurity, slog.Bool(logger.KeyPluginAutoMTLS, m.Security.AutoMTLS)),
 	)
 }
 
