@@ -37,3 +37,6 @@
 - basic filewatcher using fsnotify is working
 - this should be configurable
 - consider making the filewatcher a plugin (bi-directional)
+
+## Security
+- sha256sum my-plugin.bin > my-plugin.bin.sha256

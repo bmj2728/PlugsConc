@@ -1,39 +1,35 @@
 # Example manifest file
-
-# plugin_name is the name that will be used to register the plugin
-plugin_name: hello-world
-
-# plugin_type is the type of plugin, this is used to determine how to handle the plugin
-# see the PluginType enum in the plugin.go file for available options
-plugin_type: available-type
-
-# plugin_format is the format of the plugin, this is used to determine how to handle the plugin: rpc, grpc
-plugin_format: rpc
-
-# plugin_language is the language of the plugin, this is used to determine how to handle the plugin: go, python, etc.
-# see the PluginLanguage enum in the plugin.go file for supported options
-plugin_language: go
-
-# plugin_entrypoint is the binary launched for the plugin
-# this should be located in the same directory as the manifest.yaml file
-plugin_entrypoint: hello-world/some-binary
-
-# plugin_version is the version of the plugin
-plugin_version: 1.0.0
-
-# plugin_description is the description of the plugin
-plugin_description: This plugin is provides a hello world functionality
-
-# plugin_maintainer is the maintainer of the plugin
-plugin_maintainer: Johnny Dev
-
-# plugin_url is the url of the plugin
-plugin_url: https://github.com/jdev/hello-world-plugin
-
+plugin:
+  # plugin_name is the name that will be used to register the plugin
+  name: my-plugin
+  # plugin_type is the type of plugin, this is used to determine how to handle the plugin
+  # see the PluginType enum in the plugin.go file for available options
+  type: available-type
+  # plugin_format is the format of the plugin, this is used to determine how to handle the plugin: rpc, grpc
+  format: grpc
+  # plugin_language is the language of the plugin, this is used to determine how to handle the plugin: go, python, etc.
+  # see the PluginLanguage enum in the plugin.go file for supported options
+  language: go
+  # plugin_entrypoint is the binary launched for the plugin
+  # this should be located in the same directory as the manifest.yaml file
+  entrypoint: some-binary
+  # plugin_version is the version of the plugin
+  version: 1.0.0
+about:
+  # plugin_description is the description of the plugin
+  description: This plugin is a plugin
+  # plugin_maintainer is the maintainer of the plugin
+  maintainer: John Dev
+  # plugin_url is the url of the plugin
+  url: https://github.com/user/plugin
 # handshake is used to connect the plugin to the server.
 # This is used to determine if the plugin is compatible with the server, it is NOT used to authenticate the plugin.
 # The handshake data in the manifest must match the handshake data compiled into the plugin binary
 handshake:
   protocol_version: 1
-  magic_cookie_key: COOL_PLUGIN
-  magic_cookie_value: some-cool-value
+  magic_cookie_key: MY_PLUGIN
+  magic_cookie_value: hello
+security:
+  # If auto_mtls is true, the plugin will automatically establish an mTLS connection with the server
+  auto_mtls: true
+
