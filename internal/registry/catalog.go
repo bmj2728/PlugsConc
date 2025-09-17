@@ -14,8 +14,8 @@ import (
 type PluginCatalog struct {
 	mu            sync.RWMutex
 	manifests     *Manifests
-	pluginMap     map[string]plugin.Plugin
-	launchDetails []*PluginLaunchDetails
+	pluginMap     map[string]plugin.Plugin // this is passed to each client config
+	launchDetails []*PluginLaunchDetails   // these are passed to the plugin launcher
 	fw            *fsnotify.Watcher
 	watch         func(ctx context.Context, fw *fsnotify.Watcher)
 }
