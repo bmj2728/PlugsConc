@@ -9,6 +9,7 @@ import (
 	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
+	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
@@ -39,7 +40,7 @@ var pluginMap = map[string]plugin.Plugin{
 func main() {
 
 	// Initialize logger
-	logHandler := logger.New(os.Stdout,
+	colorHandler := logger.New(os.Stdout,
 		&logger.Options{
 			Level:     slog.LevelInfo,
 			AddSource: true,
@@ -51,7 +52,7 @@ func main() {
 
 	handlers := []slog.Handler{
 		fileHandler,
-		logHandler,
+		colorHandler,
 	}
 
 	multiHandler := logger.NewMultiHandler(handlers)
@@ -103,6 +104,9 @@ func main() {
 	}
 	woof := cat.(animal.Animal).Speak(true)
 	fmt.Printf("The cat says %s\n", woof)
+	cr, err := os.OpenRoot(".")
+	conf := config.LoadConfig(cr, "config.yaml")
+	slog.Info("Config loaded", slog.Any("config", conf))
 
 	//// Initialize plugin filewatcher
 	//watcher, err := fsnotify.NewWatcher()

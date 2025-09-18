@@ -1,24 +1,24 @@
 # Directories section is used for configurable paths
 directories:
-  # Env: PLUGINS_DIR:
+  # Env: PLUGINS_DIR
   plugins: ./plugins
-  # Env: PLUGIN_CONFIGS_DIR:
+  # Env: PLUGIN_CONFIGS_DIR
   plugin_configs: ./plugins.d
 # Logging section is used for configurable logging
 logging:
-  # Env: LOG_LEVEL:
+  # Env: LOG_LEVEL
   level: info
-  # Env: LOG_FILE:
+  # Env: LOG_FILE
   file: ./app.log
-  # Env: LOG_MAX_SIZE:
+  # Env: LOG_MAX_SIZE
   max_size: 100
-  # Env: LOG_MAX_BACKUPS:
+  # Env: LOG_MAX_BACKUPS
   max_backups: 3
-  # Env: LOG_MAX_AGE:
+  # Env: LOG_MAX_AGE
   max_age: 7
-  # Env: LOG_COMPRESS:
+  # Env: LOG_COMPRESS
   compress: true
-  # Env: LOG_ADD_SOURCE:
+  # Env: LOG_ADD_SOURCE
   add_source: true
   # Available colors: Black, BlackBackground, Red, RedBackground, Green, GreenBackground, Yellow, YellowBackground,
   # Blue, BlueBackground, Magenta, MagentaBackground, Cyan, CyanBackground, White, WhiteBackground, Default,
@@ -27,19 +27,27 @@ logging:
   # BrightMagentaBackground, BrightCyan, BrightCyanBackground.
   colors:
     full_line: false
-    # Env: LOG_INFO_FGC:
+    # Env: LOG_INFO_FG
     info_fg: BrightBlue
-    # Env: LOG_INFO_BGC:
+    # Env: LOG_INFO_BG
     info_bg: DefaultBackground
-    # Env: LOG_WARN_FGC:
+    # Env: LOG_WARN_FG
     warn_fg: BrightYellow
-    # Env: LOG_WARN_BGC:
+    # Env: LOG_WARN_BG
     warn_bg: DefaultBackground
-    # Env: LOG_ERROR_FGC:
+    # Env: LOG_ERROR_FG
     error_fg: Red
-    # Env: LOG_ERROR_BGC:
+    # Env: LOG_ERROR_BG
     error_bg: DefaultBackground
-    # Env: LOG_DEBUG_FGC:
+    # Env: LOG_DEBUG_FG
     debug_fg: White
-    # Env: LOG_DEBUG_BGC:
+    # Env: LOG_DEBUG_BG
     debug_bg: DefaultBackground
+file_watcher:
+  # Env: FILE_WATCHER_ENABLED
+  enabled: true
+  # Env: FILE_WATCHER_WATCH_PLUGINS
+  watch_plugins: true
+worker_pool:
+  # Env: MAX_WORKERS
+  enabled: 24

@@ -26,8 +26,6 @@
 - security 
  
 ## Concurrency
-
-- Research concurrent file system ops using os.Root.FS()'s fs.FS object
 - Manifests provides a thread-safe map for concurrent access
 - we currently create a new os.Root for each plugin while processing the manifest 
 - I think this should ensure thread-safety
@@ -43,16 +41,8 @@
 - this file should be stored alongside the plugin binary
 
 ## Logging
-- use slog for logging - see internal/logger for implementation and usage
-- colors are configurable via a color map and custom color settings 
-- colors can contain foreground and background colors
-- either the entire line or just the log level can be colored
-- the default color map is defined in internal/logger/color.go
-- the default options are defined in internal/logger/logger.go
-- the default options can be overridden by passing a custom Options struct to New()
-- the default output is stderr
-- the default log level is info
-- the default source inclusion is disabled
-- the default color map is defined in internal/logger/color.go
-- the default options are defined in internal/logger/logger.go
-- the default options can be overridden by passing a custom Options 
+- logging is implemented using a custom slog handler to process multiple handlers
+- currently initialized in main - supports color console logs and rotating file logs
+- color logging is configurable
+- file logging is configurable
+- config for logging is stored in config.yaml (associated env var keys are in the config file comments)
