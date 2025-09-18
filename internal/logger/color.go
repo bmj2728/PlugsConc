@@ -1,5 +1,7 @@
 package logger
 
+import "log/slog"
+
 // Color represents a string type used for ANSI color codes.
 // Supported color codes: Black, BlackBackground, Red, RedBackground, Green, GreenBackground, Yellow, YellowBackground,
 // Blue, BlueBackground, Magenta, MagentaBackground, Cyan, CyanBackground, White, WhiteBackground, Default,
@@ -30,6 +32,17 @@ func NewColorSettingWithBackground(color Color, background Color) ColorSetting {
 	return ColorSetting{
 		Foreground: color,
 		Background: background,
+	}
+}
+
+// NewColorMap creates and returns a map that associates logging levels with their corresponding ANSI color codes.
+// Available colors are defined in the Color type.
+func NewColorMap(info, debug, warn, error ColorSetting) map[slog.Level]ColorSetting {
+	return map[slog.Level]ColorSetting{
+		slog.LevelInfo:  info,
+		slog.LevelDebug: debug,
+		slog.LevelWarn:  warn,
+		slog.LevelError: error,
 	}
 }
 

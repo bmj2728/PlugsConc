@@ -40,3 +40,19 @@
 
 ## Security
 - sha256sum my-plugin.bin > my-plugin.bin.sha256
+- this file should be stored alongside the plugin binary
+
+## Logging
+- use slog for logging - see internal/logger for implementation and usage
+- colors are configurable via a color map and custom color settings 
+- colors can contain foreground and background colors
+- either the entire line or just the log level can be colored
+- the default color map is defined in internal/logger/color.go
+- the default options are defined in internal/logger/logger.go
+- the default options can be overridden by passing a custom Options struct to New()
+- the default output is stderr
+- the default log level is info
+- the default source inclusion is disabled
+- the default color map is defined in internal/logger/color.go
+- the default options are defined in internal/logger/logger.go
+- the default options can be overridden by passing a custom Options 

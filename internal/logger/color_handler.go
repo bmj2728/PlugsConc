@@ -29,17 +29,6 @@ var (
 	}
 )
 
-// NewColorMap creates and returns a map that associates logging levels with their corresponding ANSI color codes.
-// Available colors are defined in the Color type.
-func NewColorMap(info, debug, warn, error ColorSetting) map[slog.Level]ColorSetting {
-	return map[slog.Level]ColorSetting{
-		slog.LevelInfo:  info,
-		slog.LevelDebug: debug,
-		slog.LevelWarn:  warn,
-		slog.LevelError: error,
-	}
-}
-
 // ColorHandler is a log handler that formats and outputs log records with optional colorized levels.
 // It supports customization of log levels, color mappings, and formatting through the Options struct.
 // ColorHandler is thread-safe, leveraging a mutex for synchronization when handling concurrent log output.

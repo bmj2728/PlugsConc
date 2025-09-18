@@ -47,7 +47,16 @@ func main() {
 			FullLine:  false},
 	)
 
-	slog.SetDefault(slog.New(logHandler))
+	fileHandler := logger.NewFileLogHandler(logger.DefaultRotator, logger.DefaultFileLogHandlerOptions)
+
+	handlers := []slog.Handler{
+		fileHandler,
+		logHandler,
+	}
+
+	multiHandler := logger.NewMultiHandler(handlers)
+
+	slog.SetDefault(slog.New(multiHandler))
 	slog.Info("Logger initialized")
 
 	pRoot := "/home/brian/GolandProjects/PlugsConc/plugins/cat"

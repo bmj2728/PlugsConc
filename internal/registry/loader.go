@@ -23,7 +23,16 @@ var (
 
 const (
 	ManifestFileName = "manifest.yaml"
+	ConfigFileSuffix = ".config.yaml"
 )
+
+type PluginPaths struct {
+	root       string
+	entrypoint string
+	sha256     string
+	manifest   string
+	config     string
+}
 
 // LoaderErrors is a map that associates a directory with the load error that occurred during its loading process.
 type LoaderErrors map[string]error
