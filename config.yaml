@@ -1,53 +1,80 @@
 # Directories section is used for configurable paths
+application:
+  # Env: APP_NAME
+  app_name: Plugin Manager
+  # Env: APP_MODE
+  app_mode: dev
+  app_version:
+    # Env: APP_VERSION_MAJOR
+    major: 0
+    # Env: APP_VERSION_MINOR
+    minor: 1
+    # Env: APP_VERSION_PATCH
+    patch: 0
+    # Env: APP_VERSION_FULL
+    full: 0.1.0
+    # Env: APP_VERSION_CODENAME
+    codename: pluggy
 directories:
   # Env: PLUGINS_DIR
-  plugins: ./plugins
+  plugins_dir: ./plugins
   # Env: PLUGIN_CONFIGS_DIR
-  plugin_configs: ./plugins.d
+  plugin_configs_dir: ./plugins.d
+  # Env: LOGS_DIR
+  logs_dir: ./logs
 # Logging section is used for configurable logging
 logging:
   # Env: LOG_LEVEL
-  level: info
+  log_level: info
   # Env: LOG_FILE
-  file: ./app.log
+  log_filename: app.log
   # Env: LOG_MAX_SIZE
-  max_size: 100
+  log_max_size: 10
   # Env: LOG_MAX_BACKUPS
-  max_backups: 3
+  log_max_backups: 3
   # Env: LOG_MAX_AGE
-  max_age: 7
+  log_max_age: 7
   # Env: LOG_COMPRESS
-  compress: true
+  log_compress: true
   # Env: LOG_ADD_SOURCE
-  add_source: true
-  # Available colors: Black, BlackBackground, Red, RedBackground, Green, GreenBackground, Yellow, YellowBackground,
-  # Blue, BlueBackground, Magenta, MagentaBackground, Cyan, CyanBackground, White, WhiteBackground, Default,
-  # DefaultBackground, BrightBlack, BrightBlackBackground, BrightRed, BrightRedBackground, BrightGreen,
-  # BrightGreenBackground, BrightYellow, BrightYellowBackground, BrightBlue, BrightBlueBackground, BrightMagenta,
-  # BrightMagentaBackground, BrightCyan, BrightCyanBackground.
-  colors:
-    full_line: false
+  log_add_source: true
+  # log_mq is used to enable a persistent queue for async logging
+  log_mq:
+    # Env: LOG_ENABLE_PERSISTENT_QUEUE
+    log_enable_persistent_queue: true
+    # Env: LOG_PERSISTENT_DB_FILE
+    log_persistent_db_file: logs.db
+  log_colors:
+    # Available colors: Black, BlackBackground, Red, RedBackground, Green, GreenBackground, Yellow, YellowBackground,
+    # Blue, BlueBackground, Magenta, MagentaBackground, Cyan, CyanBackground, White, WhiteBackground, Default,
+    # DefaultBackground, BrightBlack, BrightBlackBackground, BrightRed, BrightRedBackground, BrightGreen,
+    # BrightGreenBackground, BrightYellow, BrightYellowBackground, BrightBlue, BrightBlueBackground, BrightMagenta,
+    # BrightMagentaBackground, BrightCyan, BrightCyanBackground.
+    # Env: LOG_FULL_LINE
+    log_full_line: false
     # Env: LOG_INFO_FG
-    info_fg: BrightBlue
+    log_info_fg: BrightBlue
     # Env: LOG_INFO_BG
-    info_bg: DefaultBackground
+    log_info_bg: DefaultBackground
     # Env: LOG_WARN_FG
-    warn_fg: BrightYellow
+    log_warn_fg: BrightYellow
     # Env: LOG_WARN_BG
-    warn_bg: DefaultBackground
+    log_warn_bg: DefaultBackground
     # Env: LOG_ERROR_FG
-    error_fg: Red
+    log_error_fg: Red
     # Env: LOG_ERROR_BG
-    error_bg: DefaultBackground
+    log_error_bg: DefaultBackground
     # Env: LOG_DEBUG_FG
-    debug_fg: White
+    log_debug_fg: BrightGreen
     # Env: LOG_DEBUG_BG
-    debug_bg: DefaultBackground
+    log_debug_bg: DefaultBackground
+# File watcher section is used for plugin file watcher
 file_watcher:
   # Env: FILE_WATCHER_ENABLED
-  enabled: true
+  fw_enabled: true
   # Env: FILE_WATCHER_WATCH_PLUGINS
-  watch_plugins: true
+  fw_watch_plugins: true
+# Worker pool section is used for the worker pool
 worker_pool:
   # Env: MAX_WORKERS
-  enabled: 24
+  wp_max_workers: 1000

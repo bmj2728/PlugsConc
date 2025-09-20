@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
-
 	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/mq"
+
+	//"github.com/bmj2728/PlugsConc/internal/mq"
+	"github.com/bmj2728/PlugsConc/internal/worker"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
 	"github.com/hashicorp/go-plugin"
@@ -39,12 +43,18 @@ var pluginMap = map[string]plugin.Plugin{
 
 func main() {
 
-	// Initialize logger
+	cr, err := os.OpenRoot(".")
+	conf := config.LoadConfig(cr, "config.yaml")
+	slog.Info("Config loaded") //kinda
+	fmt.Println(conf)
+	cm := conf.LoggerColorMap()
+
+	//Initialize logger
 	colorHandler := logger.New(os.Stdout,
 		&logger.Options{
-			Level:     slog.LevelInfo,
+			Level:     slog.LevelDebug,
 			AddSource: true,
-			ColorMap:  logger.DefaultColorMap,
+			ColorMap:  cm,
 			FullLine:  false},
 	)
 
@@ -59,6 +69,25 @@ func main() {
 
 	slog.SetDefault(slog.New(multiHandler))
 	slog.Info("Logger initialized")
+	slog.Error("Logger initialized")
+	slog.Warn("Logger initialized")
+	slog.Debug("Logger initialized")
+
+	workerPool := worker.NewPool(500, true, 1000)
+
+	workerPool.Run()
+
+	for i := 0; i < 5; i++ {
+		j := worker.NewJob(context.Background(), func(ctx context.Context) (any, error) {
+			slog.Info("Job started", slog.Int("id", i))
+			slog.Info("Job finished", slog.Int("id", i))
+			return "done", nil
+		})
+		err := workerPool.Submit(j)
+		if err != nil {
+			slog.Error("Failed to submit job", slog.Any(logger.KeyError, err))
+		}
+	}
 
 	pRoot := "/home/brian/GolandProjects/PlugsConc/plugins/cat"
 	open, err := os.OpenRoot(pRoot)
@@ -104,9 +133,6 @@ func main() {
 	}
 	woof := cat.(animal.Animal).Speak(true)
 	fmt.Printf("The cat says %s\n", woof)
-	cr, err := os.OpenRoot(".")
-	conf := config.LoadConfig(cr, "config.yaml")
-	slog.Info("Config loaded", slog.Any("config", conf))
 
 	//// Initialize plugin filewatcher
 	//watcher, err := fsnotify.NewWatcher()
@@ -242,5 +268,10 @@ func main() {
 	//
 	//plugin.CleanupClients()
 	//
-	//<-make(chan struct{})
+
+	logQueue := mq.LogQueue()
+
+	logQueue.Add(*mq.NewLoggerJob(slog.LevelInfo, "Logger queue started", []any{"queue_pending", logQueue.NumPending()}))
+
+	<-make(chan struct{})
 }

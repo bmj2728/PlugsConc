@@ -114,3 +114,57 @@ const (
 	// ResetColor defines the ANSI escape code to reset all color attributes.
 	ResetColor = Color("\033[0m")
 )
+
+// ColorLookup is a map that associates color names (string) with their corresponding ANSI color codes (Color).
+type ColorLookup map[string]Color
+
+// AvailableColorLookup is a predefined ColorLookup map for associating color names with their corresponding ANSI codes.
+var AvailableColorLookup = ColorLookup{
+	"Black":                   Black,
+	"BlackBackground":         BlackBackground,
+	"Red":                     Red,
+	"RedBackground":           RedBackground,
+	"Green":                   Green,
+	"GreenBackground":         GreenBackground,
+	"Yellow":                  Yellow,
+	"YellowBackground":        YellowBackground,
+	"Blue":                    Blue,
+	"BlueBackground":          BlueBackground,
+	"Magenta":                 Magenta,
+	"MagentaBackground":       MagentaBackground,
+	"Cyan":                    Cyan,
+	"CyanBackground":          CyanBackground,
+	"White":                   White,
+	"WhiteBackground":         WhiteBackground,
+	"Default":                 Default,
+	"DefaultBackground":       DefaultBackground,
+	"BrightBlack":             BrightBlack,
+	"BrightBlackBackground":   BrightBlackBackground,
+	"BrightRed":               BrightRed,
+	"BrightRedBackground":     BrightRedBackground,
+	"BrightGreen":             BrightGreen,
+	"BrightGreenBackground":   BrightGreenBackground,
+	"BrightYellow":            BrightYellow,
+	"BrightYellowBackground":  BrightYellowBackground,
+	"BrightBlue":              BrightBlue,
+	"BrightBlueBackground":    BrightBlueBackground,
+	"BrightMagenta":           BrightMagenta,
+	"BrightMagentaBackground": BrightMagentaBackground,
+	"BrightCyan":              BrightCyan,
+	"BrightCyanBackground":    BrightCyanBackground,
+}
+
+// GetColor retrieves the ANSI color code associated with the specified color name from the ColorLookup map.
+// If the color name is empty or not found, it returns the ResetColor constant.
+func (c ColorLookup) GetColor(color string) Color {
+	if color == "" {
+		slog.Warn("Color name is empty")
+		return ResetColor
+	}
+	val, ok := c[color]
+	if !ok {
+		slog.Warn("Color not found: %s", color)
+		return ResetColor
+	}
+	return val
+}

@@ -89,8 +89,7 @@ func NewDefault() *ColorHandler {
 }
 
 // Enabled determines if a log level is enabled based on the handler's configuration and the provided context.
-func (c *ColorHandler) Enabled(_ context.Context, level slog.Level) bool {
-	// in a real-world implementation, this would check the context for a log level filter or something similar
+func (c *ColorHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return level >= c.opts.Level.Level()
 }
 

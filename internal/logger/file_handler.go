@@ -8,7 +8,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-const DefaultLogFilename = "./app.log"
+const DefaultLogFilename = "./logs/app.log"
 
 var DefaultRotator = NewRotator(DefaultLogFilename, 5, 3, 7, true)
 

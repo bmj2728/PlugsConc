@@ -7,6 +7,8 @@ toolchain go1.24.7
 require (
 	github.com/bmj2728/utils v0.3.2
 	github.com/fsnotify/fsnotify v1.9.0
+	github.com/goptics/sqliteq v0.2.3
+	github.com/goptics/varmq v1.3.1
 	github.com/hashicorp/go-plugin v1.7.0
 	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.9
@@ -28,8 +30,10 @@ require (
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/hbollon/go-edlib v1.7.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
+	github.com/lucsky/cuid v1.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-sqlite3 v1.14.28 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/mrz1836/go-sanitize v1.5.3 // indirect
 	github.com/oklog/run v1.2.0 // indirect

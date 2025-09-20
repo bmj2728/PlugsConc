@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -64,7 +65,19 @@ type Pool struct {
 }
 
 // NewPool initializes a new Pool with the specified number of workers and a buffer size for its channels.
-func NewPool(maxWorkers int, buffer int) *Pool {
+func NewPool(maxWorkers int, limitToCPUs bool, buffer int) *Pool {
+	// TODO: add maximum workers from config
+	// get gomaxprocs, typically the number of cores on the machine, but can be overridden by the user
+	// e.g., if running on a VM with limited resources or a containerized environment
+	maxCPUs := runtime.GOMAXPROCS(0)
+	if limitToCPUs {
+		// need to also check config value
+		maxWorkers = min(maxWorkers, maxCPUs)
+	} else {
+		// need to also check config value
+		maxWorkers = min(maxWorkers)
+	}
+	// we need at least 1 worker
 	if maxWorkers < 1 {
 		maxWorkers = 1
 	}
