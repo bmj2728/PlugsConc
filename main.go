@@ -12,7 +12,6 @@ import (
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
-	"github.com/bmj2728/PlugsConc/internal/mq"
 	"github.com/bmj2728/PlugsConc/internal/registry"
 	"github.com/bmj2728/PlugsConc/internal/worker"
 	"github.com/fsnotify/fsnotify"
@@ -80,6 +79,10 @@ func main() {
 	slog.Error("Logger initialized")
 	slog.Warn("Logger initialized")
 	slog.Debug("Logger initialized")
+
+	//logQueue := mq.LogQueue(conf)
+	//
+	//aw := logger.NewAsyncWriter(logQueue)
 
 	pluginsDir := conf.PluginsDir()
 	slog.Info("Plugins directory", slog.String("dir", pluginsDir))
@@ -278,13 +281,6 @@ func main() {
 	fmt.Printf("The dog-grpc says %s\n", gWoof)
 
 	plugin.CleanupClients()
-
-	logQueue := mq.LogQueue(conf)
-
-	logQueue.Add(mq.NewLoggerJob(slog.LevelInfo,
-		"Logger queue started",
-		"queue_pending", logQueue.NumPending(),
-	))
 
 	<-make(chan struct{})
 }

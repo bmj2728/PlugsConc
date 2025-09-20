@@ -20,12 +20,19 @@ type AsyncWriter struct {
 	queue varmq.PersistentQueue[[]byte]
 }
 
+// NewAsyncWriter creates and returns a new AsyncWriter initialized with the provided persistent queue.
+func NewAsyncWriter(queue varmq.PersistentQueue[[]byte]) *AsyncWriter {
+	return &AsyncWriter{
+		queue: queue,
+	}
+}
+
 // Write attempts to enqueue the given byte slice into the queue. Returns the number of bytes written or an error.
 func (a AsyncWriter) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, ErrEmptyMessage
 	}
-	ok := a.queue.Add(p)
+	ok := a.queue.Add(p) // try to enqueue the message, returns true if successful, false if not
 	if !ok {
 		return 0, ErrFailedToWrite
 	}
