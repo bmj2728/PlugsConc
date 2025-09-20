@@ -2,7 +2,7 @@ package watcher
 
 import "github.com/fsnotify/fsnotify"
 
-type FileWatcher struct {
+type Watcher struct {
 	watcher *fsnotify.Watcher
 }
 

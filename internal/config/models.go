@@ -51,7 +51,9 @@ type Logging struct {
 
 type LogMQ struct {
 	Enabled bool   `yaml:"log_enable_persistent_queue"`
-	File    string `yaml:"log_persistent_db_file"`
+	File    string `yaml:"log_db_file"`
+	Queue   string `yaml:"log_queue"`
+	Remove  bool   `yaml:"log_remove_on_complete"`
 }
 
 type LoggingColors struct {

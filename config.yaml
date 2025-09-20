@@ -42,8 +42,12 @@ logging:
   log_mq:
     # Env: LOG_ENABLE_PERSISTENT_QUEUE
     log_enable_persistent_queue: true
-    # Env: LOG_PERSISTENT_DB_FILE
-    log_persistent_db_file: logs.db
+    # Env: LOG_DB_FILE
+    log_db_file: logs.db
+    # Env: LOG_QUEUE
+    log_queue: log_queue
+    # Env: LOG_REMOVE_ON_COMPLETE
+    log_remove_on_complete: false
   log_colors:
     # Available colors: Black, BlackBackground, Red, RedBackground, Green, GreenBackground, Yellow, YellowBackground,
     # Blue, BlueBackground, Magenta, MagentaBackground, Cyan, CyanBackground, White, WhiteBackground, Default,

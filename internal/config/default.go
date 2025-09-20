@@ -30,6 +30,8 @@ func DefaultConfig() *Config {
 		MQ: LogMQ{
 			Enabled: false,
 			File:    "",
+			Queue:   "",
+			Remove:  true,
 		},
 		Colors: LoggingColors{
 			FullLine: false,

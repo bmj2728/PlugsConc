@@ -279,9 +279,12 @@ func main() {
 
 	plugin.CleanupClients()
 
-	logQueue := mq.LogQueue()
+	logQueue := mq.LogQueue(conf)
 
-	logQueue.Add(*mq.NewLoggerJob(slog.LevelInfo, "Logger queue started", []any{"queue_pending", logQueue.NumPending()}))
+	logQueue.Add(mq.NewLoggerJob(slog.LevelInfo,
+		"Logger queue started",
+		"queue_pending", logQueue.NumPending(),
+	))
 
 	<-make(chan struct{})
 }
