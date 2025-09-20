@@ -1,26 +1,21 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/mq"
 
-	"github.com/bmj2728/PlugsConc/internal/worker"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
 	"github.com/hashicorp/go-plugin"
 )
-
-// pluginDir is the path to the directory containing the plugins.
-// This will be configurable in the future.
-var pluginDir = "./plugins"
 
 // generic handshake configuration for testing.
 var handshakeConfig = plugin.HandshakeConfig{
@@ -55,7 +50,18 @@ func main() {
 			FullLine:  conf.FullLine()},
 	)
 
-	fileHandler := logger.NewFileLogHandler(logger.DefaultRotator, logger.DefaultFileLogHandlerOptions)
+	logRotator := logger.NewRotator(filepath.Join(conf.LogsDir(), conf.LogFilename()),
+		conf.LogMaxSize(),
+		conf.LogMaxBackups(),
+		conf.LogMaxAge(),
+		conf.LogCompress())
+
+	rotatorOpts := &slog.HandlerOptions{
+		AddSource: conf.AddSource(),
+		Level:     conf.LogLevel(),
+	}
+
+	fileHandler := logger.NewFileLogHandler(logRotator, rotatorOpts)
 
 	handlers := []slog.Handler{
 		fileHandler,
@@ -70,23 +76,26 @@ func main() {
 	slog.Warn("Logger initialized")
 	slog.Debug("Logger initialized")
 
-	workerPool := worker.NewPool(500, true, 1000)
+	pluginsDir := conf.PluginsDir()
+	slog.Info("Plugins directory", slog.String("dir", pluginsDir))
 
-	workerPool.Run()
+	//workerPool := worker.NewPool(500, true, 1000)
+	//
+	//workerPool.Run()
+	//
+	//for i := 0; i < 5; i++ {
+	//	j := worker.NewJob(context.Background(), func(ctx context.Context) (any, error) {
+	//		slog.Info("Job started", slog.Int("id", i))
+	//		slog.Info("Job finished", slog.Int("id", i))
+	//		return "done", nil
+	//	})
+	//	err := workerPool.Submit(j)
+	//	if err != nil {
+	//		slog.Error("Failed to submit job", slog.Any(logger.KeyError, err))
+	//	}
+	//}
 
-	for i := 0; i < 5; i++ {
-		j := worker.NewJob(context.Background(), func(ctx context.Context) (any, error) {
-			slog.Info("Job started", slog.Int("id", i))
-			slog.Info("Job finished", slog.Int("id", i))
-			return "done", nil
-		})
-		err := workerPool.Submit(j)
-		if err != nil {
-			slog.Error("Failed to submit job", slog.Any(logger.KeyError, err))
-		}
-	}
-
-	pRoot := "/home/brian/GolandProjects/PlugsConc/plugins/cat"
+	pRoot := filepath.Join(conf.PluginsDir(), "cat")
 	open, err := os.OpenRoot(pRoot)
 	if err != nil {
 		slog.Error("Failed to open root", slog.Any(logger.KeyError, err))
