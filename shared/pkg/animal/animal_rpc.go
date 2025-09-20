@@ -1,8 +1,9 @@
 package animal
 
 import (
-	"log/slog"
 	"net/rpc"
+
+	"github.com/hashicorp/go-hclog"
 )
 
 type RPCClient struct {
@@ -13,7 +14,7 @@ func (a *RPCClient) Speak(isLoud bool) string {
 	var reply string
 	err := a.client.Call("Plugin.Speak", map[string]interface{}{"isLoud": isLoud}, &reply)
 	if err != nil {
-		slog.With(slog.String("error", err.Error())).Error("error calling Animal.Speak")
+		hclog.Default().Error("error calling Speak()", "error", err)
 	}
 	return reply
 }

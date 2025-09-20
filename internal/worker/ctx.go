@@ -3,10 +3,10 @@ package worker
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/hashicorp/go-hclog"
 )
 
 // ctxKey is a custom string-based type used as keys for storing and retrieving values in context.
@@ -69,7 +69,7 @@ func WithWorkerID(parent context.Context, id int) context.Context {
 func JobIDFromCtx(ctx context.Context) string {
 	val, ok := ctx.Value(ctxKeyJobID).(string)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobID))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobID))
 		return ""
 	}
 	return val
@@ -80,7 +80,7 @@ func JobIDFromCtx(ctx context.Context) string {
 func MaxRetriesFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyMaxRetries).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyMaxRetries))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyMaxRetries))
 		return 0
 	}
 	return val
@@ -91,7 +91,7 @@ func MaxRetriesFromCtx(ctx context.Context) int {
 func RetryDelayFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyRetryDelay).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyRetryDelay))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyRetryDelay))
 		return 0
 	}
 	return val
@@ -102,7 +102,7 @@ func RetryDelayFromCtx(ctx context.Context) int {
 func RetryCountFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyRetryCount).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyRetryCount))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyRetryCount))
 		return 0
 	}
 	return val
@@ -114,7 +114,7 @@ func RetryCountFromCtx(ctx context.Context) int {
 func JobSubmittedAtFromCtx(ctx context.Context) time.Time {
 	val, ok := ctx.Value(ctxKeyJobSubmittedAt).(time.Time)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobSubmittedAt))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobSubmittedAt))
 		return time.Time{}
 	}
 	return val
@@ -125,7 +125,7 @@ func JobSubmittedAtFromCtx(ctx context.Context) time.Time {
 func JobStartedAtFromCtx(ctx context.Context) time.Time {
 	val, ok := ctx.Value(ctxKeyJobStartedAt).(time.Time)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobStartedAt))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobStartedAt))
 		return time.Time{}
 	}
 	return val
@@ -137,7 +137,7 @@ func JobStartedAtFromCtx(ctx context.Context) time.Time {
 func JobFinishedAtFromCtx(ctx context.Context) time.Time {
 	val, ok := ctx.Value(ctxKeyJobFinishedAt).(time.Time)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobFinishedAt))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobFinishedAt))
 		return time.Time{}
 	}
 	return val
@@ -148,7 +148,7 @@ func JobFinishedAtFromCtx(ctx context.Context) time.Time {
 func JobDurationSecondsFromCtx(ctx context.Context) time.Duration {
 	val, ok := ctx.Value(ctxKeyJobDuration).(time.Duration)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobDuration))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyJobDuration))
 		return 0
 	}
 	return val
@@ -159,7 +159,7 @@ func JobDurationSecondsFromCtx(ctx context.Context) time.Duration {
 func WorkerCountFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyWorkerCount).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyWorkerCount))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyWorkerCount))
 		return 0
 	}
 	return val
@@ -170,7 +170,7 @@ func WorkerCountFromCtx(ctx context.Context) int {
 func WorkerIDFromContext(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyWorkerID).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyWorkerID))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyWorkerID))
 		return 0
 	}
 	return val
@@ -181,7 +181,7 @@ func WorkerIDFromContext(ctx context.Context) int {
 func SubmittedJobsFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeySubmittedJobs).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeySubmittedJobs))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeySubmittedJobs))
 		return 0
 	}
 	return val
@@ -191,7 +191,7 @@ func SubmittedJobsFromCtx(ctx context.Context) int {
 func FailedSubmissionsFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyFailedSubmissions).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyFailedSubmissions))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyFailedSubmissions))
 		return 0
 	}
 	return val
@@ -202,7 +202,7 @@ func FailedSubmissionsFromCtx(ctx context.Context) int {
 func PoolStartedAtFromCtx(ctx context.Context) time.Time {
 	val, ok := ctx.Value(ctxKeyPoolStartedAt).(time.Time)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolStartedAt))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolStartedAt))
 		return time.Time{}
 	}
 	return val
@@ -214,7 +214,7 @@ func PoolStartedAtFromCtx(ctx context.Context) time.Time {
 func PoolStoppedAtFromCtx(ctx context.Context) time.Time {
 	val, ok := ctx.Value(ctxKeyPoolStoppedAt).(time.Time)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolStoppedAt))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolStoppedAt))
 		return time.Time{}
 	}
 	return val
@@ -226,7 +226,7 @@ func PoolStoppedAtFromCtx(ctx context.Context) time.Time {
 func PoolCompletedAtFromCtx(ctx context.Context) time.Time {
 	val, ok := ctx.Value(ctxKeyPoolCompletedAt).(time.Time)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolCompletedAt))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolCompletedAt))
 		return time.Time{}
 	}
 	return val
@@ -237,7 +237,7 @@ func PoolCompletedAtFromCtx(ctx context.Context) time.Time {
 func PoolClosedFromCtx(ctx context.Context) bool {
 	val, ok := ctx.Value(ctxKeyPoolClosed).(bool)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolClosed))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolClosed))
 		return false
 	}
 	return val
@@ -248,7 +248,7 @@ func PoolClosedFromCtx(ctx context.Context) bool {
 func PoolDurationFromCtx(ctx context.Context) time.Duration {
 	val, ok := ctx.Value(ctxKeyPoolDuration).(time.Duration)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolDuration))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyPoolDuration))
 		return 0
 	}
 	return val
@@ -259,7 +259,7 @@ func PoolDurationFromCtx(ctx context.Context) time.Duration {
 func SuccessfulJobsFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeySuccessfulJobs).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeySuccessfulJobs))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeySuccessfulJobs))
 		return 0
 	}
 	return val
@@ -270,7 +270,7 @@ func SuccessfulJobsFromCtx(ctx context.Context) int {
 func FailedJobsFromCtx(ctx context.Context) int {
 	val, ok := ctx.Value(ctxKeyFailedJobs).(int)
 	if !ok {
-		slog.Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyFailedJobs))
+		hclog.Default().Warn(fmt.Sprintf("%s %q", ctxWarningPrefix, ctxKeyFailedJobs))
 		return 0
 	}
 	return val

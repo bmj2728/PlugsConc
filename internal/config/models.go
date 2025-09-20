@@ -78,7 +78,7 @@ func LoadConfig(root *os.Root, path string) *Config {
 	return &config
 }
 
-// LogLevel determines the logging level based on the configuration, returning a corresponding slog.Level value.
+// LogLevel determines the logging level based on the configuration, returning a corresponding hclog.Level value.
 func (c *Config) LogLevel() hclog.Level {
 	return hclog.LevelFromString(c.Logging.Level)
 }

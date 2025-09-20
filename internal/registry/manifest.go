@@ -5,12 +5,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"io/fs"
-	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"gopkg.in/yaml.v3"
 )
@@ -63,14 +63,14 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 	r, err := os.OpenRoot(root)
 	if err != nil {
 		err := errors.Join(ErrLoadingFS, err)
-		slog.Error("Failed to load plugin root", slog.Any(logger.KeyError, err))
+		hclog.Default().Error("Failed to load plugin root", logger.KeyError, err)
 		return nil, "", "", err
 	}
 	defer func(r *os.Root) {
 		err := r.Close()
 		if err != nil {
 			err := errors.Join(ErrClosingFS, err)
-			slog.Error("Failed to close root", slog.Any(logger.KeyError, err))
+			hclog.Default().Error("Failed to close root", logger.KeyError, err)
 		}
 	}(r)
 
@@ -79,7 +79,7 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 	f, err := fs.ReadFile(rootFS, path)
 	if err != nil {
 		err := errors.Join(ErrReadingFile, err)
-		slog.Error("Failed to load manifest", slog.Any(logger.KeyError, err))
+		hclog.Default().Error("Failed to load manifest", logger.KeyError, err)
 		return nil, "", "", err
 	}
 
@@ -87,37 +87,18 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 
 	if err := yaml.Unmarshal(f, &m); err != nil {
 		err := errors.Join(ErrYAMLUnmarshaling, err)
-		slog.Error("Failed to unmarshall manifest", slog.Any(logger.KeyError, err))
+		hclog.Default().Error("Failed to unmarshall manifest", logger.KeyError, err)
 		return nil, "", "", err
 	}
 
 	entrypoint = filepath.Join(root, m.PluginData.Entrypoint)
 	_, err = exec.LookPath(entrypoint)
 	if err != nil {
-		slog.Error("Failed to look up entrypoint", slog.Any(logger.KeyError, err))
+		hclog.Default().Error("Failed to look up entrypoint", logger.KeyError, err)
 		return nil, "", "", err
 	}
 
 	return m, entrypoint, hash, nil
-}
-
-// LogValue converts the Manifest's metadata into a structured slog.Value for logging purposes.
-func (m *Manifest) LogValue() slog.Value {
-	return slog.GroupValue(slog.Group(logger.KeyGroupPlugin,
-		slog.String(logger.KeyPluginName, m.PluginData.Name),
-		slog.String(logger.KeyPluginVersion, m.PluginData.Version),
-		slog.String(logger.KeyPluginType, m.PluginData.Type),
-		slog.String(logger.KeyPluginFormat, m.PluginData.Format),
-		slog.String(logger.KeyPluginLanguage, m.PluginData.Language),
-		slog.String(logger.KeyPluginEntrypoint, m.PluginData.Entrypoint)),
-		slog.Group(logger.KeyGroupAbout, slog.String(logger.KeyPluginDescription, m.About.Description),
-			slog.String(logger.KeyPluginMaintainer, m.About.Maintainer),
-			slog.String(logger.KeyPluginURL, m.About.URL)),
-		slog.Group(logger.KeyGroupHandshakeConfig, slog.Int(logger.KeyHandshakeProtocolVersion, int(m.Handshake.ProtocolVersion)),
-			slog.String(logger.KeyHandshakeMagicCookieKey, m.Handshake.MagicCookieKey),
-			slog.String(logger.KeyHandshakeMagicCookieValue, m.Handshake.MagicCookieValue)),
-		slog.Group(logger.KeyGroupSecurity, slog.Bool(logger.KeyPluginAutoMTLS, m.Security.AutoMTLS)),
-	)
 }
 
 // getMD5Hash computes the MD5 hash of the given byte slice and returns it as a hexadecimal string.
@@ -131,7 +112,7 @@ func (m *Manifest) ToLaunchDetails() *PluginLaunchDetails {
 	ld.name = m.PluginData.Name
 	hc, err := m.Handshake.ToConfig()
 	if err != nil {
-		slog.Error("Failed to load plugin launch details", slog.Any(logger.KeyError, err))
+		hclog.Default().Error("Failed to load plugin launch details", logger.KeyError, err)
 		return nil
 	}
 	ld.handshakeConfig = hc

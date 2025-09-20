@@ -3,14 +3,13 @@ package worker
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"runtime"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/hashicorp/go-hclog"
 )
 
 // ErrPoolClosed indicates that the worker pool has been closed and cannot accept any new jobs.
@@ -30,21 +29,6 @@ func (b BatchErrors) Add(jobID string, err error) BatchErrors {
 	return b
 }
 
-// LogValue formats and returns batch error details as a structured logging value
-func (b BatchErrors) LogValue() slog.Value {
-	var formatted strings.Builder
-	if len(b) == 0 {
-		return slog.AnyValue("")
-	}
-	formatted.WriteString("Batch Errors:\n")
-	for j, e := range b {
-		entry := fmt.Sprintf("%s: %s\n", j, e.Error())
-		formatted.WriteString(entry)
-	}
-	batchGroup := slog.GroupValue(slog.String(logger.KeyBatchErrors, formatted.String()))
-	return batchGroup
-}
-
 // NewMetricResult creates and returns a new MetricResult with the given success status.
 func NewMetricResult(isSuccess bool) *MetricResult {
 	return &MetricResult{
@@ -54,6 +38,7 @@ func NewMetricResult(isSuccess bool) *MetricResult {
 
 // Pool represents a worker pool used to manage the execution of concurrent jobs.
 type Pool struct {
+	poolLogger     hclog.Logger
 	maxWorkers     int                // workers count
 	jobs           chan *Job          // for incoming jobs
 	results        chan *JobResult    // for completed jobs
@@ -65,7 +50,7 @@ type Pool struct {
 }
 
 // NewPool initializes a new Pool with the specified number of workers and a buffer size for its channels.
-func NewPool(maxWorkers int, limitToCPUs bool, buffer int) *Pool {
+func NewPool(maxWorkers int, limitToCPUs bool, buffer int, poolLogger hclog.Logger) *Pool {
 	// TODO: add maximum workers from config
 	// get gomaxprocs, typically the number of cores on the machine, but can be overridden by the user
 	// e.g., if running on a VM with limited resources or a containerized environment
@@ -95,7 +80,11 @@ func NewPool(maxWorkers int, limitToCPUs bool, buffer int) *Pool {
 		results = make(chan *JobResult, buffer)
 		metricsConsumer = make(chan *MetricResult, buffer)
 	}
+	if poolLogger == nil {
+		poolLogger = hclog.Default()
+	}
 	return &Pool{
+		poolLogger:     poolLogger,
 		maxWorkers:     maxWorkers,
 		jobs:           jobs,
 		results:        results,
@@ -111,7 +100,7 @@ func (p *Pool) Run() {
 	p.metrics.SetStarted()
 	go p.collectMetrics()
 	for i := 1; i <= p.maxWorkers; i++ {
-		nw := NewWorker(i, p.jobs, p.results, p.quit, p.metricsChannel)
+		nw := NewWorker(i, p.jobs, p.results, p.quit, p.metricsChannel, p.poolLogger.Named(fmt.Sprintf("worker-%d", i)))
 		p.wg.Add(1)
 		go func(w *Worker) {
 			defer p.wg.Done() // Signal completion when the goroutine exits
@@ -130,7 +119,7 @@ func (p *Pool) Submit(job *Job) (err error) {
 		if r := recover(); r != nil {
 			err = ErrPoolClosed
 			p.metrics.RecordFailedSubmission()
-			slog.With(slog.String(logger.KeyJobID, job.ID)).Warn("Job queue closed, job not submitted")
+			p.poolLogger.With(logger.KeyJobID, job.ID).Warn("Job queue closed, job not submitted")
 		}
 	}()
 	p.jobs <- job
@@ -147,7 +136,7 @@ func (p *Pool) SubmitBatch(jobs []*Job) (int, int, BatchErrors) {
 		err := p.Submit(job)
 		if err != nil {
 			failures++
-			slog.With(slog.String(logger.KeyJobID, job.ID)).Warn("Job failed", slog.Any("error", err))
+			p.poolLogger.With(logger.KeyJobID, job.ID).Warn("Job failed", "error", err)
 			errorMap.Add(job.ID, err)
 		} else {
 			submitted++
@@ -165,7 +154,7 @@ func (p *Pool) Shutdown() {
 		p.metrics.SetCompleted()
 		err := p.metrics.SetDuration()
 		if err != nil {
-			slog.Warn("unable to set metrics")
+			p.poolLogger.Warn("unable to set metrics")
 		}
 		close(p.results)
 		close(p.metricsChannel)
@@ -181,7 +170,7 @@ func (p *Pool) Stop() {
 		p.metrics.SetCompleted()
 		err := p.metrics.SetDuration()
 		if err != nil {
-			slog.Warn("unable to set pool duration")
+			p.poolLogger.Warn("unable to set pool duration")
 		}
 	}
 }
@@ -196,7 +185,7 @@ func (p *Pool) Terminate() {
 		p.metrics.SetCompleted()
 		err := p.metrics.SetDuration()
 		if err != nil {
-			slog.Warn("unable to set pool duration")
+			p.poolLogger.Warn("unable to set pool duration")
 		}
 		close(p.results)
 		close(p.metricsChannel)
@@ -251,15 +240,6 @@ func (p *Pool) Metrics() *PoolMetrics {
 	mCopy.failed = p.metrics.failed
 	//return copy
 	return mCopy
-}
-
-// LogValue generates a structured log representation of the pool's state, including its closed status,
-// worker count, and metrics.
-func (p *Pool) LogValue() slog.Value {
-	return slog.GroupValue(slog.Bool(logger.KeyPoolClosed, p.closed.Load()),
-		slog.Int(logger.KeyWorkerCount, p.maxWorkers),
-		slog.Any(logger.KeyPoolMetrics, p.metrics.LogValue()),
-	)
 }
 
 // collectMetrics processes metric results from the metricsChannel, updating success and failure counts

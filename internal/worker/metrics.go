@@ -2,11 +2,8 @@ package worker
 
 import (
 	"errors"
-	"log/slog"
 	"sync"
 	"time"
-
-	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // ErrNoStart indicates that a required start time is missing.
@@ -156,21 +153,6 @@ func (pm *PoolMetrics) RecordFailedJob() {
 	pm.failed++
 }
 
-// LogValue returns a slog.Value representing the current state of PoolMetrics, including job counts and time attributes.
-func (pm *PoolMetrics) LogValue() slog.Value {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
-	metrics := slog.GroupValue(slog.Int(logger.KeySubmittedJobs, pm.submissions),
-		slog.Int(logger.KeyFailedSubmissions, pm.failed),
-		slog.Int(logger.KeySuccessfulJobs, pm.succeeded),
-		slog.Int(logger.KeyFailedJobs, pm.failed),
-		slog.Time(logger.KeyPoolStartedAt, pm.startedAt),
-		slog.Time(logger.KeyPoolStoppedAt, pm.stoppedAt),
-		slog.Time(logger.KeyPoolCompletedAt, pm.completedAt),
-		slog.Float64(logger.KeyPoolDuration, pm.duration.Seconds()))
-	return metrics
-}
-
 // JobMetrics represents the timing and retry metrics of a job including submission, start, finish times, and attempts.
 type JobMetrics struct {
 	SubmittedAt time.Time
@@ -183,16 +165,6 @@ type JobMetrics struct {
 // NewJobMetrics initializes and returns a new instance of JobMetrics with default zero values for its fields.
 func NewJobMetrics() *JobMetrics {
 	return &JobMetrics{}
-}
-
-// LogValue assembles job metrics into a structured slog.Value for logging, including timestamps, duration,
-// and retry count.
-func (jm *JobMetrics) LogValue() slog.Value {
-	return slog.GroupValue(slog.Time(logger.KeyJobSubmittedAt, jm.SubmittedAt),
-		slog.Time(logger.KeyJobStartedAt, jm.StartedAt),
-		slog.Time(logger.KeyJobFinishedAt, jm.FinishedAt),
-		slog.Float64(logger.KeyJobDuration, jm.Duration.Seconds()),
-		slog.Int(logger.KeyRetryCount, jm.Attempts))
 }
 
 // GetSubmittedAt returns the time when the job was submitted.

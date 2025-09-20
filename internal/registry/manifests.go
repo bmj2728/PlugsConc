@@ -1,12 +1,7 @@
 package registry
 
 import (
-	"fmt"
-	"log/slog"
-	"strings"
 	"sync"
-
-	"github.com/bmj2728/PlugsConc/internal/logger"
 )
 
 // ManifestEntry represents an entry containing a plugin's manifest and associated hash for identifying integrity.
@@ -37,12 +32,6 @@ func (m *ManifestEntry) Hash() string {
 
 func (m *ManifestEntry) Entrypoint() string {
 	return m.entrypoint
-}
-
-// LogValue returns a slog.Value representing the loggable structure of the associated Manifest
-// object within ManifestEntry.
-func (m *ManifestEntry) LogValue() slog.Value {
-	return m.entry.LogValue()
 }
 
 // Manifests is a thread-safe structure for managing a collection of ManifestEntry objects with synchronized access.
@@ -97,20 +86,4 @@ func (m *Manifests) GetHash(dir string) string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.entries[dir].Hash()
-}
-
-// LogValue generates a structured slog.Value representing the current state of all plugin manifests in the collection.
-func (m *Manifests) LogValue() slog.Value {
-	var formatted strings.Builder
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	if len(m.entries) == 0 {
-		return slog.AnyValue("")
-	}
-	formatted.WriteString("Plugin Manifests:\n")
-	for d, e := range m.entries {
-		entry := fmt.Sprintf("%s: %s\n", d, e.Manifest().LogValue().String())
-		formatted.WriteString(entry)
-	}
-	return slog.GroupValue(slog.String(logger.KeyPluginMap, formatted.String()))
 }

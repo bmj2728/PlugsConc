@@ -2,21 +2,22 @@ package worker
 
 import (
 	"fmt"
-	"log/slog"
 	"runtime/debug"
 	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/hashicorp/go-hclog"
 )
 
 // Worker represents a worker that processes jobs from the jobs channel and sends results
 // to the results channel.
 type Worker struct {
-	id      int
-	jobs    <-chan *Job
-	results chan<- *JobResult
-	metrics chan<- *MetricResult
-	quit    chan struct{}
+	workerLogger hclog.Logger
+	id           int
+	jobs         <-chan *Job
+	results      chan<- *JobResult
+	metrics      chan<- *MetricResult
+	quit         chan struct{}
 }
 
 // NewWorker creates and initializes a new Worker with a unique ID, a channel of jobs to process,
@@ -24,22 +25,26 @@ type Worker struct {
 func NewWorker(id int, jobs <-chan *Job,
 	results chan<- *JobResult,
 	quit chan struct{},
-	metrics chan<- *MetricResult) *Worker {
+	metrics chan<- *MetricResult,
+	workerLogger hclog.Logger) *Worker {
+	if workerLogger == nil {
+		workerLogger = hclog.Default()
+	}
 	return &Worker{
-		id:      id,
-		jobs:    jobs,
-		results: results,
-		quit:    quit,
-		metrics: metrics,
+		workerLogger: workerLogger,
+		id:           id,
+		jobs:         jobs,
+		results:      results,
+		quit:         quit,
+		metrics:      metrics,
 	}
 }
 
 // Start begins the worker's execution loop, processing jobs from the channel and sending results
 // to the results channel.
 func (w *Worker) Start() {
-	slogWorkerID := slog.Int(logger.KeyWorkerID, w.id)
-	slog.With(slogWorkerID).Debug("Worker started")
-	defer slog.With(slogWorkerID).Debug("Worker stopped")
+	w.workerLogger.Debug("Worker started")
+	defer w.workerLogger.Debug("Worker stopped")
 
 	for {
 		select {
@@ -92,11 +97,10 @@ func (w *Worker) Start() {
 					}
 
 					// log retry
-					slog.With(
-						slogWorkerID,
-						slog.String(logger.KeyJobID, job.ID),
-						slog.Int(logger.KeyRetryCount, attempts+1),
-					).Warn("Retrying job")
+					w.workerLogger.
+						With(logger.KeyJobID, job.ID).
+						With(logger.KeyRetryCount, attempts+1).
+						Warn("Retrying job")
 
 					// wait for the retry delay before continuing the loop
 					if delay > 0 {
@@ -123,15 +127,15 @@ func (w *Worker) Start() {
 				// Pool was terminated while trying to send the result.
 				// Log that the result is being discarded and exit the worker.
 				job.SetFinishedAt()
-				slog.With(slogWorkerID, job.LogValue()).Warn("Worker terminated before sending result")
+				w.workerLogger.Warn("Worker terminated before sending result")
 				return
 			}
 
-			attrs := []any{slogWorkerID, slog.String(logger.KeyJobID, job.ID)}
+			attrs := []any{logger.KeyWorkerID, w.id, logger.KeyJobID, job.ID}
 			if err != nil {
-				slog.With(attrs...).Error("Job failed", slog.Any("error", err))
+				w.workerLogger.With(attrs...).Error("Job failed", "error", err)
 			} else {
-				slog.With(attrs...).Debug("Job completed")
+				w.workerLogger.With(attrs...).Debug("Job completed")
 			}
 		case <-w.quit:
 			return

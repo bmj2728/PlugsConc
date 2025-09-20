@@ -2,14 +2,12 @@ package registry
 
 import (
 	"errors"
-	"fmt"
 	"io/fs"
-	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/hashicorp/go-hclog"
 )
 
 // ErrInvalidPluginPath is returned when the specified plugins directory path is invalid or cannot be accessed.
@@ -42,30 +40,22 @@ func (l LoaderErrors) add(dir string, err error) LoaderErrors {
 	return l
 }
 
-func (l LoaderErrors) LogValue() slog.Value {
-	var formatted strings.Builder
-	if len(l) == 0 {
-		return slog.AnyValue("")
-	}
-	formatted.WriteString("Plugin Loading Errors:\n")
-	for d, e := range l {
-		entry := fmt.Sprintf("%s: %s\n", d, e.Error())
-		formatted.WriteString(entry)
-	}
-	return slog.GroupValue(slog.String(logger.KeyPluginLoadErrors, formatted.String()))
-}
-
 // PluginLoader is responsible for discovering, loading, and managing plugin manifests from a specified directory.
 type PluginLoader struct {
-	path      string // path to the plugins directory
-	manifests *Manifests
+	loadLogger hclog.Logger
+	path       string // path to the plugins directory
+	manifests  *Manifests
 }
 
 // NewPluginLoader initializes a new PluginLoader for managing plugins in the specified directory path.
-func NewPluginLoader(path string) (*PluginLoader, error) {
+func NewPluginLoader(path string, loadLogger hclog.Logger) (*PluginLoader, error) {
+	if loadLogger == nil {
+		loadLogger = hclog.Default()
+	}
 	loader := &PluginLoader{
-		path:      path,
-		manifests: NewManifests(),
+		loadLogger: loadLogger,
+		path:       path,
+		manifests:  NewManifests(),
 	}
 	return loader, nil
 }
@@ -83,7 +73,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 	root, err := os.OpenRoot(pl.path)
 	if err != nil {
 		err = errors.Join(ErrInvalidPluginPath, err)
-		slog.Error("Failed to open root", slog.Any(logger.KeyError, err))
+		pl.loadLogger.Error("Failed to open root", logger.KeyError, err)
 		lErrs.add(pl.path, err)
 		return pl.manifests, lErrs
 	}
@@ -91,7 +81,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 		err := root.Close()
 		if err != nil {
 			err = errors.Join(ErrClosingFS, err)
-			slog.Error("Failed to close root", slog.Any(logger.KeyError, err))
+			pl.loadLogger.Error("Failed to close root", logger.KeyError, err)
 			lErrs.add(pl.path, err)
 		}
 	}(root)
@@ -104,10 +94,10 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 		}
 		if err != nil && d.IsDir() {
 			err = errors.Join(ErrInvalidPluginPath, err)
-			slog.Error("Failed to walk directory", slog.Any(logger.KeyError, err))
+			pl.loadLogger.Error("Failed to walk directory", logger.KeyError, err)
 			absPath, pathErr := filepath.Abs(filepath.Join(pl.path, path))
 			if pathErr != nil {
-				slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
+				pl.loadLogger.Error("Failed to get absolute path", logger.KeyError, err)
 			}
 			if absPath != "" {
 				lErrs.add(absPath, err)
@@ -122,13 +112,13 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 		if d.IsDir() {
 			absPluginRoot, absErr := filepath.Abs(filepath.Join(pl.path, path))
 			if absErr != nil {
-				slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
+				pl.loadLogger.Error("Failed to get absolute path", logger.KeyError, err)
 				// if there is an error getting the absolute path, try to use the relative path instead
 				absPluginRoot = filepath.Join(pl.path, path)
 			}
 			manifest, entrypoint, hash, err := LoadManifest(absPluginRoot, ManifestFileName)
 			if err != nil {
-				slog.Error("Failed to load manifest", slog.Any(logger.KeyError, err))
+				pl.loadLogger.Error("Failed to load manifest", logger.KeyError, err)
 				// if there is an error loading the manifest, Add it to the LoaderErrors map
 				lErrs.add(absPluginRoot, err)
 				// Add the manifest to the manifests map (nil/"") to indicate that the manifest is invalid/missing
@@ -142,7 +132,7 @@ func (pl *PluginLoader) Load() (*Manifests, LoaderErrors) {
 	})
 	if err != nil {
 		err = errors.Join(ErrLoadingFS, err)
-		slog.Error("Failed to load plugins", slog.Any(logger.KeyError, err))
+		pl.loadLogger.Error("Failed to load plugins", logger.KeyError, err)
 		lErrs.add(pl.path, err)
 		return pl.manifests, lErrs
 	}

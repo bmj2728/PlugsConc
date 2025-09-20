@@ -44,12 +44,12 @@ func main() {
 
 	cr, err := os.OpenRoot(".")
 	if err != nil {
-		tempLogger.Error("Failed to open root", logger.KeyError, err.Error())
+		tempLogger.Error("Failed to open root", logger.KeyError, err)
 	}
 	defer func(cr *os.Root) {
 		err := cr.Close()
 		if err != nil {
-			tempLogger.Error("Failed to close root", logger.KeyError, err.Error())
+			tempLogger.Error("Failed to close root", logger.KeyError, err)
 		}
 	}(cr)
 
@@ -74,7 +74,7 @@ func main() {
 	pluginsDir := conf.PluginsDir()
 	multiLogger.Info("Plugins directory", "dir", pluginsDir)
 
-	workerPool := worker.NewPool(500, true, 1000)
+	workerPool := worker.NewPool(500, true, 1000, multiLogger.Named("worker_pool"))
 
 	workerPool.Run()
 
@@ -86,19 +86,19 @@ func main() {
 		})
 		err := workerPool.Submit(j)
 		if err != nil {
-			hclog.FromContext(jobCtx).Error("Failed to submit job", logger.KeyError, err.Error())
+			hclog.FromContext(jobCtx).Error("Failed to submit job", logger.KeyError, err)
 		}
 	}
 
 	pRoot := filepath.Join(conf.PluginsDir(), "cat")
 	open, err := os.OpenRoot(pRoot)
 	if err != nil {
-		multiLogger.Error("Failed to open root", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to open root", logger.KeyError, err)
 	}
 	defer func(open *os.Root) {
 		err := open.Close()
 		if err != nil {
-			multiLogger.Error("Failed to close root", logger.KeyError, err.Error())
+			multiLogger.Error("Failed to close root", logger.KeyError, err)
 		}
 	}(open)
 
@@ -107,7 +107,7 @@ func main() {
 
 	secConf, err := checksum.LoadSHA256(open, csFilename)
 	if err != nil {
-		multiLogger.Error("Failed to load checksum", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to load checksum", logger.KeyError, err)
 	} else {
 		multiLogger.Info("Checksum loaded successfully")
 	}
@@ -125,13 +125,13 @@ func main() {
 
 	rpcCatClient, err := catClient.Client()
 	if err != nil {
-		multiLogger.Error("Failed to create catClient", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to create catClient", logger.KeyError, err)
 		os.Exit(1)
 	}
 
 	cat, err := rpcCatClient.Dispense("cat")
 	if err != nil {
-		multiLogger.Error("Failed to dispense cat", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to dispense cat", logger.KeyError, err)
 		os.Exit(1)
 	}
 	meow := cat.(animal.Animal).Speak(true)
@@ -140,13 +140,13 @@ func main() {
 	// Initialize plugin filewatcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		multiLogger.Error("Failed to create watcher", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to create watcher", logger.KeyError, err)
 		multiLogger.Warn("Watching for changes will not work")
 	}
 	defer func(watcher *fsnotify.Watcher) {
 		err := watcher.Close()
 		if err != nil {
-			multiLogger.Error("Failed to close watcher", logger.KeyError, err.Error())
+			multiLogger.Error("Failed to close watcher", logger.KeyError, err)
 		}
 	}(watcher)
 
@@ -179,14 +179,14 @@ func main() {
 				if !ok {
 					return
 				}
-				multiLogger.Error("filewatcher error: ", logger.KeyError, err.Error())
+				multiLogger.Error("filewatcher error: ", logger.KeyError, err)
 			}
 		}
 	}(watcher)
 
-	loader, err := registry.NewPluginLoader(pluginsDir)
+	loader, err := registry.NewPluginLoader(pluginsDir, multiLogger)
 	if err != nil {
-		multiLogger.Error("Failed to create plugin loader", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to create plugin loader", logger.KeyError, err)
 		os.Exit(1)
 	}
 	p, e := loader.Load()
@@ -208,11 +208,11 @@ func main() {
 
 		pFolder, err := filepath.Abs(filepath.Join(pluginsDir, m.Manifest().PluginData.Name))
 		if err != nil {
-			multiLogger.Error("Failed to get absolute path", logger.KeyError, err.Error())
+			multiLogger.Error("Failed to get absolute path", logger.KeyError, err)
 		}
 		err = watcher.Add(pFolder)
 		if err != nil {
-			multiLogger.Error("Failed to add watcher", logger.KeyError, err.Error())
+			multiLogger.Error("Failed to add watcher", logger.KeyError, err)
 		}
 
 		ld := m.Manifest().ToLaunchDetails()
@@ -232,13 +232,13 @@ func main() {
 
 	rpcDogClient, err := dogClient.Client()
 	if err != nil {
-		multiLogger.Error("Failed to create dogClient", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to create dogClient", logger.KeyError, err)
 		os.Exit(1)
 	}
 
 	dog, err := rpcDogClient.Dispense("dog")
 	if err != nil {
-		multiLogger.Error("Failed to dispense dog", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to dispense dog", logger.KeyError, err)
 		os.Exit(1)
 	}
 	woof := dog.(animal.Animal).Speak(true)
@@ -255,12 +255,12 @@ func main() {
 
 	rpcGDogClient, err := gDogClient.Client()
 	if err != nil {
-		multiLogger.Error("Failed to create gDogClient", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to create gDogClient", logger.KeyError, err)
 		os.Exit(1)
 	}
 	gDog, err := rpcGDogClient.Dispense("dog-grpc")
 	if err != nil {
-		multiLogger.Error("Failed to dispense dog", logger.KeyError, err.Error())
+		multiLogger.Error("Failed to dispense dog", logger.KeyError, err)
 	}
 	gWoof := gDog.(animal.Animal).Speak(false)
 

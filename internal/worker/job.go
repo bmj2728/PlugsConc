@@ -2,10 +2,7 @@ package worker
 
 import (
 	"context"
-	"log/slog"
 	"time"
-
-	"github.com/bmj2728/PlugsConc/internal/logger"
 
 	"github.com/bmj2728/utils/pkg/strutil"
 )
@@ -138,22 +135,4 @@ func NewJobResult(job *Job, workerID int, value any, err error) *JobResult {
 		Value:    value,
 		Err:      err,
 	}
-}
-
-// LogValue returns a structured slog.Value representing key metadata and timing information for the Job.
-func (j *Job) LogValue() slog.Value {
-	return slog.GroupValue(slog.String(logger.KeyJobID, j.ID),
-		slog.Int(logger.KeyMaxRetries, j.MaxRetries),
-		slog.Int(logger.KeyRetryDelay, j.RetryDelay),
-		slog.Any(logger.KeyJobMetrics, j.Metrics.LogValue()))
-}
-
-// LogValue returns a structured slog.Value containing detailed information about the job,
-// such as timestamps and results.
-func (jr *JobResult) LogValue() slog.Value {
-	return slog.GroupValue(slog.String(logger.KeyJobID, jr.JobID),
-		slog.Int(logger.KeyWorkerID, jr.WorkerID),
-		slog.Any(logger.KeyJobValue, jr.Value),
-		slog.Any(logger.KeyJobError, jr.Err),
-		slog.Any(logger.KeyJobMetrics, jr.Metrics.LogValue()))
 }
