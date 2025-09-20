@@ -6,14 +6,12 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	//"os/exec"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/mq"
 
-	//"github.com/bmj2728/PlugsConc/internal/mq"
 	"github.com/bmj2728/PlugsConc/internal/worker"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
@@ -47,15 +45,14 @@ func main() {
 	conf := config.LoadConfig(cr, "config.yaml")
 	slog.Info("Config loaded") //kinda
 	fmt.Println(conf)
-	cm := conf.LoggerColorMap()
 
 	//Initialize logger
 	colorHandler := logger.New(os.Stdout,
 		&logger.Options{
-			Level:     slog.LevelDebug,
-			AddSource: true,
-			ColorMap:  cm,
-			FullLine:  false},
+			Level:     conf.LogLevel(),
+			AddSource: conf.AddSource(),
+			ColorMap:  conf.LoggerColorMap(),
+			FullLine:  conf.FullLine()},
 	)
 
 	fileHandler := logger.NewFileLogHandler(logger.DefaultRotator, logger.DefaultFileLogHandlerOptions)

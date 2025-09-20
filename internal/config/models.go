@@ -144,3 +144,29 @@ func (c *Config) LoggerColorMap() map[slog.Level]logger.ColorSetting {
 
 	return logger.NewColorMap(i, d, w, e)
 }
+
+// LogLevel determines the logging level based on the configuration, returning a corresponding slog.Level value.
+func (c *Config) LogLevel() slog.Level {
+	switch c.Logging.Level {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+// AddSource returns a boolean indicating whether the logging configuration includes the source of log entries.
+func (c *Config) AddSource() bool {
+	return c.Logging.AddSource
+}
+
+// FullLine returns true if the configuration specifies full-line logging with colors enabled, otherwise false.
+func (c *Config) FullLine() bool {
+	return c.Logging.Colors.FullLine
+}
