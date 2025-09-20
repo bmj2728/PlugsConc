@@ -12,7 +12,7 @@ func MultiLogger(name string,
 	level hclog.Level,
 	color hclog.ColorOption,
 	includeLocation bool,
-	isJSON bool) hclog.Logger {
+	isJSON bool) hclog.InterceptLogger {
 	return hclog.NewInterceptLogger(&hclog.LoggerOptions{
 		Name:            name,
 		Level:           level,
@@ -24,7 +24,7 @@ func MultiLogger(name string,
 
 // DefaultLogger returns a pre-configured logger instance with default parameters for application-level logging.
 func DefaultLogger() hclog.Logger {
-	return MultiLogger("application", hclog.Info, hclog.AutoColor, true, false)
+	return MultiLogger("application", hclog.Info, hclog.ForceColor, true, false)
 }
 
 // FileSink creates a new hclog.SinkAdapter for logging to a file with configurable options like level, format, and color.

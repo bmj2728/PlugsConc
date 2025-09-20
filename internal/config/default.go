@@ -20,31 +20,19 @@ func DefaultConfig() *Config {
 	}
 
 	Logging := Logging{
-		Level:      "info",
-		Filename:   "app.log",
-		MaxSize:    0,
-		MaxBackups: 0,
-		MaxAge:     0,
-		Compress:   false,
-		AddSource:  true,
+		Level:        "info",
+		Filename:     "app.log",
+		MaxSize:      0,
+		MaxBackups:   0,
+		MaxAge:       0,
+		Compress:     false,
+		InclLocation: true,
 		MQ: LogMQ{
 			Enabled: false,
 			File:    "",
 			Queue:   "",
 			Remove:  true,
-		},
-		Colors: LoggingColors{
-			FullLine: false,
-			InfoFGC:  "BrightBlue",
-			InfoBGC:  "DefaultBackground",
-			WarnFGC:  "BrightYellow",
-			WarnBGC:  "DefaultBackground",
-			ErrorFGC: "Red",
-			ErrorBGC: "DefaultBackground",
-			DebugFGC: "BrightGreen",
-			DebugBGC: "DefaultBackground",
-		},
-	}
+		}}
 	fw := FileWatcher{
 		Enabled:      false,
 		WatchPlugins: false,

@@ -37,7 +37,7 @@ logging:
   # Env: LOG_COMPRESS
   log_compress: true
   # Env: LOG_ADD_SOURCE
-  log_add_source: true
+  log_include_location: true
   # log_mq is used to enable a persistent queue for async logging
   log_mq:
     # Env: LOG_ENABLE_PERSISTENT_QUEUE
@@ -48,30 +48,6 @@ logging:
     log_queue: log_queue
     # Env: LOG_REMOVE_ON_COMPLETE
     log_remove_on_complete: false
-  log_colors:
-    # Available colors: Black, BlackBackground, Red, RedBackground, Green, GreenBackground, Yellow, YellowBackground,
-    # Blue, BlueBackground, Magenta, MagentaBackground, Cyan, CyanBackground, White, WhiteBackground, Default,
-    # DefaultBackground, BrightBlack, BrightBlackBackground, BrightRed, BrightRedBackground, BrightGreen,
-    # BrightGreenBackground, BrightYellow, BrightYellowBackground, BrightBlue, BrightBlueBackground, BrightMagenta,
-    # BrightMagentaBackground, BrightCyan, BrightCyanBackground.
-    # Env: LOG_FULL_LINE
-    log_full_line: false
-    # Env: LOG_INFO_FG
-    log_info_fg: BrightBlue
-    # Env: LOG_INFO_BG
-    log_info_bg: DefaultBackground
-    # Env: LOG_WARN_FG
-    log_warn_fg: BrightYellow
-    # Env: LOG_WARN_BG
-    log_warn_bg: DefaultBackground
-    # Env: LOG_ERROR_FG
-    log_error_fg: Red
-    # Env: LOG_ERROR_BG
-    log_error_bg: DefaultBackground
-    # Env: LOG_DEBUG_FG
-    log_debug_fg: BrightGreen
-    # Env: LOG_DEBUG_BG
-    log_debug_bg: DefaultBackground
 # File watcher section is used for plugin file watcher
 file_watcher:
   # Env: FILE_WATCHER_ENABLED

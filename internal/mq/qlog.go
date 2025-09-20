@@ -1,22 +1,23 @@
 package mq
 
 import (
-	"log/slog"
 	"path/filepath"
+	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/goptics/sqliteq"
 	"github.com/goptics/varmq"
+	"github.com/hashicorp/go-hclog"
 )
 
 type LoggerJob struct {
-	Level slog.Level
+	Level hclog.Level
 	Msg   string
 	Args  []any
 }
 
-func NewLoggerJob(level slog.Level, msg string, args ...any) LoggerJob {
+func NewLoggerJob(level hclog.Level, msg string, args ...any) LoggerJob {
 	return LoggerJob{
 		Level: level,
 		Msg:   msg,
@@ -26,9 +27,9 @@ func NewLoggerJob(level slog.Level, msg string, args ...any) LoggerJob {
 
 // LogQueue handles the initialization of a persistent log queue, processes jobs, and logs messages based on
 // their severity level.
-func LogQueue(conf *config.Config) varmq.PersistentQueue[LoggerJob] {
+func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[LoggerJob] {
 	if !conf.LogMQEnabled() {
-		slog.Info("Message queue logging is disabled. Skipping initialization.")
+		log.Info("Message queue logging is disabled. Skipping initialization.")
 		return nil
 	}
 
@@ -36,7 +37,7 @@ func LogQueue(conf *config.Config) varmq.PersistentQueue[LoggerJob] {
 
 	aDir, err := filepath.Abs(dir)
 	if err != nil {
-		slog.Error("Failed to get absolute path for logs directory", slog.Any(logger.KeyError, err))
+		log.Error("Failed to get absolute path for logs directory", logger.KeyError, err.Error())
 		return nil
 	}
 
@@ -44,20 +45,25 @@ func LogQueue(conf *config.Config) varmq.PersistentQueue[LoggerJob] {
 
 	persistentQueue, err := sdb.NewQueue(conf.Logging.MQ.Queue, sqliteq.WithRemoveOnComplete(conf.Logging.MQ.Remove))
 	if err != nil {
-		slog.Error("Failed to create queue", slog.Any(logger.KeyError, err))
+		log.Error("Failed to create queue", logger.KeyError, err.Error())
 	}
 
 	loggerWorker := varmq.NewWorker(
 		func(j varmq.Job[LoggerJob]) {
+			time.Sleep(10 * time.Second)
 			switch j.Data().Level {
-			case slog.LevelInfo:
-				slog.Info(j.Data().Msg, j.Data().Args...)
-			case slog.LevelDebug:
-				slog.Debug(j.Data().Msg, j.Data().Args...)
-			case slog.LevelWarn:
-				slog.Warn(j.Data().Msg, j.Data().Args...)
-			case slog.LevelError:
-				slog.Error(j.Data().Msg, j.Data().Args...)
+			case hclog.Trace:
+				log.Trace(j.Data().Msg, j.Data().Args...)
+			case hclog.Debug:
+				log.Debug(j.Data().Msg, j.Data().Args...)
+			case hclog.Warn:
+				log.Warn(j.Data().Msg, j.Data().Args...)
+			case hclog.Error:
+				log.Error(j.Data().Msg, j.Data().Args...)
+			case hclog.Info:
+				log.Info(j.Data().Msg, j.Data().Args...)
+			default:
+				log.Info(j.Data().Msg, j.Data().Args)
 			}
 		}, 10,
 	)

@@ -2,10 +2,9 @@ package config
 
 import (
 	"io/fs"
-	"log/slog"
 	"os"
 
-	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/hashicorp/go-hclog"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,15 +37,14 @@ type Directories struct {
 }
 
 type Logging struct {
-	Level      string        `yaml:"log_level"`
-	Filename   string        `yaml:"log_filename"`
-	MaxSize    int           `yaml:"log_max_size"`
-	MaxBackups int           `yaml:"log_max_backups"`
-	MaxAge     int           `yaml:"log_max_age"`
-	Compress   bool          `yaml:"log_compress"`
-	AddSource  bool          `yaml:"log_add_source"`
-	MQ         LogMQ         `yaml:"log_mq"`
-	Colors     LoggingColors `yaml:"log_colors"`
+	Level        string `yaml:"log_level"`
+	Filename     string `yaml:"log_filename"`
+	MaxSize      int    `yaml:"log_max_size"`
+	MaxBackups   int    `yaml:"log_max_backups"`
+	MaxAge       int    `yaml:"log_max_age"`
+	Compress     bool   `yaml:"log_compress"`
+	InclLocation bool   `yaml:"log_include_location"`
+	MQ           LogMQ  `yaml:"log_mq"`
 }
 
 type LogMQ struct {
@@ -54,18 +52,6 @@ type LogMQ struct {
 	File    string `yaml:"log_db_file"`
 	Queue   string `yaml:"log_queue"`
 	Remove  bool   `yaml:"log_remove_on_complete"`
-}
-
-type LoggingColors struct {
-	FullLine bool   `yaml:"log_full_line"`
-	InfoFGC  string `yaml:"log_info_fg"`
-	InfoBGC  string `yaml:"log_info_bg"`
-	WarnFGC  string `yaml:"log_warn_fg"`
-	WarnBGC  string `yaml:"log_warn_bg"`
-	ErrorFGC string `yaml:"log_error_fg"`
-	ErrorBGC string `yaml:"log_error_bg"`
-	DebugFGC string `yaml:"log_debug_fg"`
-	DebugBGC string `yaml:"log_debug_bg"`
 }
 
 type FileWatcher struct {
@@ -92,75 +78,9 @@ func LoadConfig(root *os.Root, path string) *Config {
 	return &config
 }
 
-func (c *Config) LoggerColorMap() map[slog.Level]logger.ColorSetting {
-
-	if c.Logging.Colors == (LoggingColors{}) {
-		return logger.DefaultColorMap
-	}
-
-	iFG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.InfoFGC)
-	if iFG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: InfoFGC is reset color")
-		iFG = logger.Default
-	}
-	iBG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.InfoBGC)
-	if iBG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: InfoBGC is reset color")
-		iBG = logger.DefaultBackground
-	}
-	dFG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.DebugFGC)
-	if dFG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: DebugFGC is reset color")
-		dFG = logger.Default
-	}
-	dBG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.DebugBGC)
-	if dBG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: DebugBGC is reset color")
-		dBG = logger.DefaultBackground
-	}
-	wFG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.WarnFGC)
-	if wFG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: WarnFGC is reset color")
-		wFG = logger.Default
-	}
-	wBG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.WarnBGC)
-	if wBG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: WarnBGC is reset color")
-		wBG = logger.DefaultBackground
-	}
-	eFG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.ErrorFGC)
-	if eFG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: ErrorFGC is reset color")
-		eFG = logger.Default
-	}
-	eBG := logger.AvailableColorLookup.GetColor(c.Logging.Colors.ErrorBGC)
-	if eBG == logger.ResetColor {
-		slog.Warn("Invalid color configuration: ErrorBGC is reset color")
-		eBG = logger.DefaultBackground
-	}
-
-	i := logger.NewColorSettingWithBackground(iFG, iBG)
-	d := logger.NewColorSettingWithBackground(dFG, dBG)
-	w := logger.NewColorSettingWithBackground(wFG, wBG)
-	e := logger.NewColorSettingWithBackground(eFG, eBG)
-
-	return logger.NewColorMap(i, d, w, e)
-}
-
 // LogLevel determines the logging level based on the configuration, returning a corresponding slog.Level value.
-func (c *Config) LogLevel() slog.Level {
-	switch c.Logging.Level {
-	case "debug":
-		return slog.LevelDebug
-	case "info":
-		return slog.LevelInfo
-	case "warn":
-		return slog.LevelWarn
-	case "error":
-		return slog.LevelError
-	default:
-		return slog.LevelInfo
-	}
+func (c *Config) LogLevel() hclog.Level {
+	return hclog.LevelFromString(c.Logging.Level)
 }
 
 // LogFilename returns the filename for the log file as specified in the Logging configuration.
@@ -190,13 +110,13 @@ func (c *Config) LogCompress() bool {
 
 // AddSource returns a boolean indicating whether the logging configuration includes the source of log entries.
 func (c *Config) AddSource() bool {
-	return c.Logging.AddSource
+	return c.Logging.InclLocation
 }
 
-// FullLine returns true if the configuration specifies full-line logging with colors enabled, otherwise false.
-func (c *Config) FullLine() bool {
-	return c.Logging.Colors.FullLine
-}
+//// FullLine returns true if the configuration specifies full-line logging with colors enabled, otherwise false.
+//func (c *Config) FullLine() bool {
+//	return c.Logging.Colors.FullLine
+//}
 
 // PluginsDir returns the configured directory path where plugins are stored.
 func (c *Config) PluginsDir() string {

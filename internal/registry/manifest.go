@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -92,14 +91,12 @@ func LoadManifest(root, path string) (m *Manifest, entrypoint string, hash strin
 		return nil, "", "", err
 	}
 
-	// todo - check if entrypoint is valid executable
 	entrypoint = filepath.Join(root, m.PluginData.Entrypoint)
-	lookPath, err := exec.LookPath(entrypoint)
+	_, err = exec.LookPath(entrypoint)
 	if err != nil {
 		slog.Error("Failed to look up entrypoint", slog.Any(logger.KeyError, err))
 		return nil, "", "", err
 	}
-	fmt.Println(lookPath)
 
 	return m, entrypoint, hash, nil
 }

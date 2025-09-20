@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,12 +11,13 @@ import (
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
+	"github.com/bmj2728/PlugsConc/internal/mq"
 	"github.com/bmj2728/PlugsConc/internal/registry"
 	"github.com/bmj2728/PlugsConc/internal/worker"
-	"github.com/fsnotify/fsnotify"
-
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
+	"github.com/fsnotify/fsnotify"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 )
 
@@ -40,19 +40,26 @@ var pluginMap = map[string]plugin.Plugin{
 
 func main() {
 
-	cr, err := os.OpenRoot(".")
-	conf := config.LoadConfig(cr, "config.yaml")
-	slog.Info("Config loaded") //kinda
-	fmt.Println(conf)
+	tempLogger := logger.DefaultLogger()
 
-	//Initialize logger
-	colorHandler := logger.New(os.Stdout,
-		&logger.Options{
-			Level:     conf.LogLevel(),
-			AddSource: conf.AddSource(),
-			ColorMap:  conf.LoggerColorMap(),
-			FullLine:  conf.FullLine()},
-	)
+	cr, err := os.OpenRoot(".")
+	if err != nil {
+		tempLogger.Error("Failed to open root", logger.KeyError, err.Error())
+	}
+	defer func(cr *os.Root) {
+		err := cr.Close()
+		if err != nil {
+			tempLogger.Error("Failed to close root", logger.KeyError, err.Error())
+		}
+	}(cr)
+
+	tempLogger.Info("Root opened")
+	conf := config.LoadConfig(cr, "config.yaml")
+	tempLogger.Info("Config loaded", "config", conf.Application.AppName)
+
+	multiLogger := logger.MultiLogger(conf.Application.AppName, conf.LogLevel(), hclog.ForceColor, conf.AddSource(), false)
+	hclog.SetDefault(multiLogger)
+	multiLogger.Info("Logger initialized")
 
 	logRotator := logger.NewRotator(filepath.Join(conf.LogsDir(), conf.LogFilename()),
 		conf.LogMaxSize(),
@@ -60,72 +67,54 @@ func main() {
 		conf.LogMaxAge(),
 		conf.LogCompress())
 
-	rotatorOpts := &slog.HandlerOptions{
-		AddSource: conf.AddSource(),
-		Level:     conf.LogLevel(),
-	}
-
-	fileHandler := logger.NewFileLogHandler(logRotator, rotatorOpts)
-
-	handlers := []slog.Handler{
-		fileHandler,
-		colorHandler,
-	}
-
-	multiHandler := logger.NewMultiHandler(handlers)
-
-	slog.SetDefault(slog.New(multiHandler))
-	slog.Info("Logger initialized")
-	slog.Error("Logger initialized")
-	slog.Warn("Logger initialized")
-	slog.Debug("Logger initialized")
-
-	//logQueue := mq.LogQueue(conf)
-	//
-	//aw := logger.NewAsyncWriter(logQueue)
+	logFileSink := logger.FileSink("file_logger", conf.LogLevel(), logRotator, hclog.ColorOff, conf.AddSource(), true)
+	multiLogger.RegisterSink(logFileSink)
+	multiLogger.Info("File logger initialized")
 
 	pluginsDir := conf.PluginsDir()
-	slog.Info("Plugins directory", slog.String("dir", pluginsDir))
+	multiLogger.Info("Plugins directory", "dir", pluginsDir)
 
 	workerPool := worker.NewPool(500, true, 1000)
 
 	workerPool.Run()
 
 	for i := 0; i < 5; i++ {
-		j := worker.NewJob(context.Background(), func(ctx context.Context) (any, error) {
-			slog.Info("Job started", slog.Int("id", i))
-			slog.Info("Job finished", slog.Int("id", i))
+		jobCtx := hclog.WithContext(context.Background(), multiLogger.Named("job_logger").With("job_id", i))
+		j := worker.NewJob(jobCtx, func(ctx context.Context) (any, error) {
+			hclog.FromContext(ctx).Info("Job logged")
 			return "done", nil
 		})
 		err := workerPool.Submit(j)
 		if err != nil {
-			slog.Error("Failed to submit job", slog.Any(logger.KeyError, err))
+			hclog.FromContext(jobCtx).Error("Failed to submit job", logger.KeyError, err.Error())
 		}
 	}
 
 	pRoot := filepath.Join(conf.PluginsDir(), "cat")
 	open, err := os.OpenRoot(pRoot)
 	if err != nil {
-		slog.Error("Failed to open root", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to open root", logger.KeyError, err.Error())
 	}
 	defer func(open *os.Root) {
 		err := open.Close()
 		if err != nil {
-			slog.Error("Failed to close root", slog.Any(logger.KeyError, err))
+			multiLogger.Error("Failed to close root", logger.KeyError, err.Error())
 		}
 	}(open)
 
 	entrypoint := "cat"
-	csFilename := entrypoint + checksum.ChecksumFileExt
+	csFilename := entrypoint + checksum.CSFileExt
 
 	secConf, err := checksum.LoadSHA256(open, csFilename)
 	if err != nil {
-		slog.Error("Failed to load checksum", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to load checksum", logger.KeyError, err.Error())
+	} else {
+		multiLogger.Info("Checksum loaded successfully")
 	}
-	fmt.Println(secConf.Checksum)
 
 	catClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
+		Logger:           multiLogger.Named("cat"),
 		Plugins:          pluginMap,
 		Cmd:              exec.Command("./plugins/cat/cat"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
@@ -136,28 +125,28 @@ func main() {
 
 	rpcCatClient, err := catClient.Client()
 	if err != nil {
-		slog.Error("Failed to create catClient", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to create catClient", logger.KeyError, err.Error())
 		os.Exit(1)
 	}
 
 	cat, err := rpcCatClient.Dispense("cat")
 	if err != nil {
-		slog.Error("Failed to dispense cat", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to dispense cat", logger.KeyError, err.Error())
 		os.Exit(1)
 	}
-	woof := cat.(animal.Animal).Speak(true)
-	fmt.Printf("The cat says %s\n", woof)
+	meow := cat.(animal.Animal).Speak(true)
+	fmt.Printf("The cat says %s\n", meow)
 
 	// Initialize plugin filewatcher
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		slog.Error("Failed to create watcher", slog.Any(logger.KeyError, err))
-		slog.Warn("Watching for changes will not work")
+		multiLogger.Error("Failed to create watcher", logger.KeyError, err.Error())
+		multiLogger.Warn("Watching for changes will not work")
 	}
 	defer func(watcher *fsnotify.Watcher) {
 		err := watcher.Close()
 		if err != nil {
-			slog.Error("Failed to close watcher", slog.Any(logger.KeyError, err))
+			multiLogger.Error("Failed to close watcher", logger.KeyError, err.Error())
 		}
 	}(watcher)
 
@@ -172,39 +161,39 @@ func main() {
 				}
 				log.Println("event:", event)
 				if event.Has(fsnotify.Write) {
-					slog.Info("file changed:", slog.String("file", event.Name))
+					multiLogger.Info("file changed:", "file", event.Name)
 				}
 				if event.Has(fsnotify.Create) {
-					slog.Info("file created:", slog.String("file", event.Name))
+					multiLogger.Info("file created:", "file", event.Name)
 				}
 				if event.Has(fsnotify.Remove) {
-					slog.Info("file removed:", slog.String("file", event.Name))
+					multiLogger.Info("file removed:", "file", event.Name)
 				}
 				if event.Has(fsnotify.Rename) {
-					slog.Info("file renamed:", slog.String("file", event.Name))
+					multiLogger.Info("file renamed:", "file", event.Name)
 				}
 				if event.Has(fsnotify.Chmod) {
-					slog.Info("file mode changed:", slog.String("file", event.Name))
+					multiLogger.Info("file mode changed:", "file", event.Name)
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
-				slog.Error("filewatcher error: ", slog.Any(logger.KeyError, err))
+				multiLogger.Error("filewatcher error: ", logger.KeyError, err.Error())
 			}
 		}
 	}(watcher)
 
 	loader, err := registry.NewPluginLoader(pluginsDir)
 	if err != nil {
-		slog.Error("Failed to create plugin loader", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to create plugin loader", logger.KeyError, err.Error())
 		os.Exit(1)
 	}
 	p, e := loader.Load()
 	if len(e) > 0 {
-		slog.Error("Failed to load plugins", slog.Any(logger.KeyError, e))
+		multiLogger.Error("Failed to load plugins", logger.KeyError, e)
 	}
-	slog.Info("Plugins loaded", slog.Any("plugins", p.LogValue()))
+	multiLogger.Info("Plugins loaded", "plugins", p)
 
 	var pluginMapImported = make(map[string]plugin.Plugin)
 
@@ -219,25 +208,22 @@ func main() {
 
 		pFolder, err := filepath.Abs(filepath.Join(pluginsDir, m.Manifest().PluginData.Name))
 		if err != nil {
-			slog.Error("Failed to get absolute path", slog.Any(logger.KeyError, err))
+			multiLogger.Error("Failed to get absolute path", logger.KeyError, err.Error())
 		}
 		err = watcher.Add(pFolder)
 		if err != nil {
-			slog.Error("Failed to add watcher", slog.Any(logger.KeyError, err))
+			multiLogger.Error("Failed to add watcher", logger.KeyError, err.Error())
 		}
 
 		ld := m.Manifest().ToLaunchDetails()
-		fmt.Println(m.Entrypoint())
-		fmt.Println(ld.Cmd())
+		multiLogger.Info("Plugin loaded", "launch_details", ld)
 
 	}
-
-	fmt.Println(pluginMapImported)
-	fmt.Println(pluginMap)
 
 	dogClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
+		Logger:           multiLogger.Named("dog"),
 		Cmd:              exec.Command("./plugins/dog/dog"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC},
 		AutoMTLS:         true,
@@ -246,20 +232,21 @@ func main() {
 
 	rpcDogClient, err := dogClient.Client()
 	if err != nil {
-		slog.Error("Failed to create dogClient", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to create dogClient", logger.KeyError, err.Error())
 		os.Exit(1)
 	}
 
 	dog, err := rpcDogClient.Dispense("dog")
 	if err != nil {
-		slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to dispense dog", logger.KeyError, err.Error())
 		os.Exit(1)
 	}
-	woof = dog.(animal.Animal).Speak(true)
+	woof := dog.(animal.Animal).Speak(true)
 
 	gDogClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  handshakeConfig,
 		Plugins:          pluginMap,
+		Logger:           multiLogger.Named("dog-grpc"),
 		Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
 		AutoMTLS:         true,
@@ -268,12 +255,12 @@ func main() {
 
 	rpcGDogClient, err := gDogClient.Client()
 	if err != nil {
-		slog.Error("Failed to create gDogClient", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to create gDogClient", logger.KeyError, err.Error())
 		os.Exit(1)
 	}
 	gDog, err := rpcGDogClient.Dispense("dog-grpc")
 	if err != nil {
-		slog.Error("Failed to dispense dog", slog.Any(logger.KeyError, err))
+		multiLogger.Error("Failed to dispense dog", logger.KeyError, err.Error())
 	}
 	gWoof := gDog.(animal.Animal).Speak(false)
 
@@ -281,6 +268,17 @@ func main() {
 	fmt.Printf("The dog-grpc says %s\n", gWoof)
 
 	plugin.CleanupClients()
+
+	q := mq.LogQueue(conf, multiLogger)
+	q.Add(mq.NewLoggerJob(hclog.Info,
+		"Hello, world!",
+		"async_key_1", "value1",
+		"async_key_2", "value2",
+		"async_key_3", "value3"))
+
+	for i := 0; i < 500; i++ {
+		multiLogger.Info("counting", "iter", i)
+	}
 
 	<-make(chan struct{})
 }
