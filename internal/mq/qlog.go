@@ -1,8 +1,10 @@
 package mq
 
 import (
+	"bytes"
+	"encoding/gob"
+	"errors"
 	"path/filepath"
-	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
@@ -11,10 +13,41 @@ import (
 	"github.com/hashicorp/go-hclog"
 )
 
+var (
+	ErrLogMsgEncoder = errors.New("error encoding log message")
+	ErrLogMsgDecoder = errors.New("error decoding log message")
+)
+
 type LoggerJob struct {
 	Level hclog.Level
 	Msg   string
 	Args  []any
+}
+
+func (j LoggerJob) Encode() ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+	err := encoder.Encode(j)
+	if err != nil {
+		err = errors.Join(ErrLogMsgEncoder, err)
+		hclog.Default().Error("error encoding log message", "error", err)
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func DecodeLoggerJob(b []byte) (LoggerJob, error) {
+	var j LoggerJob
+
+	buf := bytes.NewBuffer(b)
+	decoder := gob.NewDecoder(buf)
+	err := decoder.Decode(&j)
+	if err != nil {
+		err = errors.Join(ErrLogMsgDecoder, err)
+		hclog.Default().Error("error decoding log message", "error", err)
+		return j, err
+	}
+	return j, nil
 }
 
 func NewLoggerJob(level hclog.Level, msg string, args ...any) LoggerJob {
@@ -27,7 +60,7 @@ func NewLoggerJob(level hclog.Level, msg string, args ...any) LoggerJob {
 
 // LogQueue handles the initialization of a persistent log queue, processes jobs, and logs messages based on
 // their severity level.
-func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[LoggerJob] {
+func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[[]byte] {
 	if !conf.LogMQEnabled() {
 		log.Info("Message queue logging is disabled. Skipping initialization.")
 		return nil
@@ -49,21 +82,24 @@ func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[Logge
 	}
 
 	loggerWorker := varmq.NewWorker(
-		func(j varmq.Job[LoggerJob]) {
-			time.Sleep(10 * time.Second)
-			switch j.Data().Level {
+		func(j varmq.Job[[]byte]) {
+			lj, err := DecodeLoggerJob(j.Data())
+			if err != nil {
+				log.Error("Failed to decode log message", logger.KeyError, err)
+			}
+			switch lj.Level {
 			case hclog.Trace:
-				log.Trace(j.Data().Msg, j.Data().Args...)
+				log.Trace(lj.Msg, lj.Args...)
 			case hclog.Debug:
-				log.Debug(j.Data().Msg, j.Data().Args...)
+				log.Debug(lj.Msg, lj.Args...)
 			case hclog.Warn:
-				log.Warn(j.Data().Msg, j.Data().Args...)
+				log.Warn(lj.Msg, lj.Args...)
 			case hclog.Error:
-				log.Error(j.Data().Msg, j.Data().Args...)
+				log.Error(lj.Msg, lj.Args...)
 			case hclog.Info:
-				log.Info(j.Data().Msg, j.Data().Args...)
+				log.Info(lj.Msg, lj.Args...)
 			default:
-				log.Info(j.Data().Msg, j.Data().Args)
+				log.Info(lj.Msg, lj.Args)
 			}
 		}, 10,
 	)

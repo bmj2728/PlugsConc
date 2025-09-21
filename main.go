@@ -270,11 +270,12 @@ func main() {
 	plugin.CleanupClients()
 
 	q := mq.LogQueue(conf, multiLogger)
-	q.Add(mq.NewLoggerJob(hclog.Info,
+	encodedLog, err := mq.NewLoggerJob(hclog.Info,
 		"Hello, world!",
 		"async_key_1", "value1",
 		"async_key_2", "value2",
-		"async_key_3", "value3"))
+		"async_key_3", "value3").Encode()
+	q.Add(encodedLog)
 
 	for i := 0; i < 500; i++ {
 		multiLogger.Info("counting", "iter", i)

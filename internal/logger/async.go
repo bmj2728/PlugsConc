@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/goptics/varmq"
+	"github.com/hashicorp/go-hclog"
 )
 
 var (
@@ -45,4 +46,20 @@ func (a AsyncWriter) Close() error {
 		return ErrNoQueue
 	}
 	return a.queue.Close()
+}
+
+func AsyncLogger(name string,
+	level hclog.Level,
+	mq varmq.PersistentQueue[[]byte],
+	color hclog.ColorOption,
+	includeLocation bool,
+	isJSON bool) hclog.Logger {
+	return hclog.New(&hclog.LoggerOptions{
+		Name:            name,
+		Level:           level,
+		Output:          NewAsyncWriter(mq),
+		Color:           color,
+		IncludeLocation: includeLocation,
+		JSONFormat:      isJSON,
+	})
 }
