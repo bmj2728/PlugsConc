@@ -17,10 +17,40 @@ Key capabilities
     - Handshake protocol settings (magic cookie key/value + protocol version) from manifest.
 
 - Structured logger
-  - Based on hashicorp/go‑hclog with multi‑sink support.
-  - Console logger + file sink with rotation via lumberjack; file size/backups/age and compression are configurable.
-  - Optional async logging via a persistent queue (SQLite) using sqliteq + varmq.
-  - JSON or colored console output options and include location toggles.
+  - Based on hashicorp/go-hclog with multi-sink support.
+  - Clear split between realtime sinks (console, files, etc.) and async logging via a persistent queue.
+  - Realtime: MultiLogger is the primary intercept logger that fans out to registered sinks immediately.
+  - Async: the log queue has its own InterceptLogger (created with AsyncInterceptLogger) that has its own primary output and sinks. A realtime MultiLogger can register an AsyncSink that enqueues logs into the queue.
+  - Typical flow: multi -> AsyncSink -> AsyncWriter -> queue -> async intercept logger -> async sinks (e.g., rotated file).
+  - File rotation via lumberjack; size/backups/age/compress configurable.
+  - JSON or colored console output; include location toggle.
+
+Logging initialization example (see main.go lines 60–77)
+
+```
+// Realtime multi-logger (console)
+multiLogger := logger.MultiLogger(conf.Application.AppName, conf.LogLevel(), hclog.ForceColor, conf.AddSource(), false)
+hclog.SetDefault(multiLogger)
+multiLogger.Info("Logger initialized")
+
+// Rotating file for async side
+logRotator := logger.NewRotator(filepath.Join(conf.LogsDir(), conf.LogFilename()),
+    conf.LogMaxSize(),
+    conf.LogMaxBackups(),
+    conf.LogMaxAge(),
+    conf.LogCompress())
+
+// Async side: its own intercept logger + queue + sink registration
+asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
+q := mq.LogQueue(conf, asyncI)
+
+aLogs := logger.AsyncSink("async-sink", q, conf.LogLevel(), hclog.ColorOff, conf.AddSource(), true)
+
+// Bridge realtime -> async via AsyncSink
+multiLogger.RegisterSink(aLogs)
+hclog.SetDefault(multiLogger)
+multiLogger.Info("File logger initialized")
+```
 
 - File watcher
   - fsnotify‑based watcher observes plugin directories (create/modify/remove/rename/chmod) and logs changes.
@@ -56,8 +86,9 @@ How things work together
 
 1) Startup
 - Load configuration from config.yaml (using an fs rooted at repository root via os.OpenRoot).
-- Initialize a MultiLogger (console) and then register a file sink with rotation.
-- Optionally start the persistent log MQ worker (if enabled by config).
+- Initialize a realtime MultiLogger (console).
+- Create the async side: Rotator -> AsyncInterceptLogger -> LogQueue; register an AsyncSink on the realtime MultiLogger to enqueue logs (see main.go lines 60–77).
+- Start the persistent log MQ worker, which drains the queue and logs using the async intercept logger.
 - Start a worker pool and submit some sample jobs to demonstrate logging from within job contexts.
 
 2) Plugin discovery and use

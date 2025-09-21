@@ -1,11 +1,8 @@
 package mq
 
 import (
-	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -54,47 +51,6 @@ func (l *LogEntry) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-type LoggerJob struct {
-	Level hclog.Level
-	Msg   string
-	Args  []any
-}
-
-func (j LoggerJob) Encode() ([]byte, error) {
-	var buf bytes.Buffer
-	encoder := gob.NewEncoder(&buf)
-	err := encoder.Encode(j)
-	if err != nil {
-		err = errors.Join(ErrLogMsgEncoder, err)
-		hclog.Default().Error("error encoding log message", "error", err)
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func DecodeLoggerJob(b []byte) (LoggerJob, error) {
-	var j LoggerJob
-
-	buf := bytes.NewBuffer(b)
-	decoder := gob.NewDecoder(buf)
-	err := decoder.Decode(&j)
-	if err != nil && !strings.Contains(err.Error(), "bad data: undefined type") {
-		fmt.Println(err)
-		err = errors.Join(ErrLogMsgDecoder, err)
-		hclog.Default().Error("error decoding log message", "error", err)
-		return j, err
-	}
-	return j, nil
-}
-
-func NewLoggerJob(level hclog.Level, msg string, args ...any) LoggerJob {
-	return LoggerJob{
-		Level: level,
-		Msg:   msg,
-		Args:  args,
-	}
 }
 
 // LogQueue handles the initialization of a persistent log queue, processes jobs, and logs messages based on
