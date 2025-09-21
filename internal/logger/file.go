@@ -54,3 +54,21 @@ func FileLogger(name string,
 		JSONFormat:      isJSON,
 	})
 }
+
+// FileSink creates a new hclog.SinkAdapter for logging to a file with configurable options like level, format, and color.
+// It supports log file rotation through the provided lumberjack.Logger instance.
+func FileSink(name string,
+	level hclog.Level,
+	rotator *lumberjack.Logger,
+	color hclog.ColorOption,
+	includeLocation bool,
+	isJSON bool) hclog.SinkAdapter {
+	return hclog.NewSinkAdapter(&hclog.LoggerOptions{
+		Name:            name,
+		Level:           level,
+		Output:          rotator,
+		Color:           color,
+		IncludeLocation: includeLocation,
+		JSONFormat:      isJSON,
+	})
+}

@@ -67,8 +67,14 @@ func main() {
 		conf.LogMaxAge(),
 		conf.LogCompress())
 
-	logFileSink := logger.FileSink("file_logger", conf.LogLevel(), logRotator, hclog.ColorOff, conf.AddSource(), true)
-	multiLogger.RegisterSink(logFileSink)
+	//logFileSink := logger.FileSink("file_logger", conf.LogLevel(), logRotator, hclog.ColorOff, conf.AddSource(), true)
+
+	asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
+	q := mq.LogQueue(conf, asyncI)
+
+	aLogs := logger.AsyncSink("async-sink", q, conf.LogLevel(), hclog.ColorOff, conf.AddSource(), true)
+
+	multiLogger.RegisterSink(aLogs)
 	multiLogger.Info("File logger initialized")
 
 	pluginsDir := conf.PluginsDir()
@@ -81,7 +87,7 @@ func main() {
 	for i := 0; i < 5; i++ {
 		jobCtx := hclog.WithContext(context.Background(), multiLogger.Named("job_logger").With("job_id", i))
 		j := worker.NewJob(jobCtx, func(ctx context.Context) (any, error) {
-			hclog.FromContext(ctx).Info("Job logged")
+			fmt.Println("Hello World")
 			return "done", nil
 		})
 		err := workerPool.Submit(j)
@@ -268,18 +274,6 @@ func main() {
 	fmt.Printf("The dog-grpc says %s\n", gWoof)
 
 	plugin.CleanupClients()
-
-	q := mq.LogQueue(conf, multiLogger)
-	encodedLog, err := mq.NewLoggerJob(hclog.Info,
-		"Hello, world!",
-		"async_key_1", "value1",
-		"async_key_2", "value2",
-		"async_key_3", "value3").Encode()
-	q.Add(encodedLog)
-
-	for i := 0; i < 500; i++ {
-		multiLogger.Info("counting", "iter", i)
-	}
 
 	<-make(chan struct{})
 }

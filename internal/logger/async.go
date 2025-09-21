@@ -2,6 +2,7 @@ package logger
 
 import (
 	"errors"
+	"io"
 
 	"github.com/goptics/varmq"
 	"github.com/hashicorp/go-hclog"
@@ -48,18 +49,43 @@ func (a AsyncWriter) Close() error {
 	return a.queue.Close()
 }
 
-func AsyncLogger(name string,
+// AsyncSink creates and returns a SinkAdapter for asynchronous logging using a persistent message queue.
+// The queue must be initialized with an AsyncInterceptLogger. This sync can then be passed to the multi-writer.
+func AsyncSink(name string,
+	queue varmq.PersistentQueue[[]byte],
 	level hclog.Level,
-	mq varmq.PersistentQueue[[]byte],
 	color hclog.ColorOption,
 	includeLocation bool,
-	isJSON bool) hclog.Logger {
-	return hclog.New(&hclog.LoggerOptions{
-		Name:            name,
-		Level:           level,
-		Output:          NewAsyncWriter(mq),
-		Color:           color,
-		IncludeLocation: includeLocation,
-		JSONFormat:      isJSON,
-	})
+	isJSON bool) hclog.SinkAdapter {
+	return hclog.NewSinkAdapter(AsyncOptions(name, level, queue, color, includeLocation, isJSON))
 }
+
+// AsyncInterceptLogger creates the base logger for asynchronous logging using a persistent message queue.
+// This logger must be passed to LogQueue. The defined logger will use the queue to write messages asynchronously.
+// Additional async destinations can be added to the logger by calling RegisterSink on the returned logger.
+func AsyncInterceptLogger(name string,
+	level hclog.Level,
+	output io.Writer,
+	color hclog.ColorOption,
+	includeLocation bool,
+	isJSON bool) hclog.InterceptLogger {
+	return hclog.NewInterceptLogger(NewOptions(name, level, output, color, includeLocation, isJSON))
+}
+
+/*
+Logging Setup
+**imports from config should create logger options - the type can be used to create loggers, intercept loggers or sinks
+1. default logger until config is loaded
+2. setup console log from config if configured
+3. we need:
+	a. Multi-Write Intercept Logger - done
+		i. this takes the console logger as the base logger - done
+	b. If any other loggers are set for async, we create:
+		i. an Async Sink - register it to the multi-writer
+		ii. An Async Intercept Logger + the first async logger is used to create it
+		iii. additional sinks created for any loggers using async and registered to async sink
+		iv. Async Intercept is passed to LogQueue
+		v. flow becomes multi -> async sink -> async writer -> queue -> async logger -> fanned to each sink
+	c. If any loggers aare not set for async, we create:
+		i. sinks for each logger and then register it to the multi-writer: the current implementation works fine
+*/

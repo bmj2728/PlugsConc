@@ -3,8 +3,11 @@ package mq
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
@@ -17,6 +20,41 @@ var (
 	ErrLogMsgEncoder = errors.New("error encoding log message")
 	ErrLogMsgDecoder = errors.New("error decoding log message")
 )
+
+type LogEntry struct {
+	Caller    string `json:"@caller"`
+	Level     string `json:"@level"`
+	Message   string `json:"@message"`
+	Module    string `json:"@module"`
+	Timestamp string `json:"@timestamp"`
+	// You might also want to handle arbitrary additional fields
+	Fields map[string]interface{} `json:"-"`
+}
+
+func (l *LogEntry) UnmarshalJSON(data []byte) error {
+	// First unmarshal into a generic map
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	// Extract known fields
+	l.Caller, _ = raw["@caller"].(string)
+	l.Level, _ = raw["@level"].(string)
+	l.Message, _ = raw["@message"].(string)
+	l.Module, _ = raw["@module"].(string)
+	l.Timestamp, _ = raw["@timestamp"].(string)
+
+	// Everything else goes into Fields
+	l.Fields = make(map[string]interface{})
+	for k, v := range raw {
+		if !strings.HasPrefix(k, "@") {
+			l.Fields[k] = v
+		}
+	}
+
+	return nil
+}
 
 type LoggerJob struct {
 	Level hclog.Level
@@ -42,7 +80,8 @@ func DecodeLoggerJob(b []byte) (LoggerJob, error) {
 	buf := bytes.NewBuffer(b)
 	decoder := gob.NewDecoder(buf)
 	err := decoder.Decode(&j)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "bad data: undefined type") {
+		fmt.Println(err)
 		err = errors.Join(ErrLogMsgDecoder, err)
 		hclog.Default().Error("error decoding log message", "error", err)
 		return j, err
@@ -60,9 +99,9 @@ func NewLoggerJob(level hclog.Level, msg string, args ...any) LoggerJob {
 
 // LogQueue handles the initialization of a persistent log queue, processes jobs, and logs messages based on
 // their severity level.
-func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[[]byte] {
+func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[]byte] {
 	if !conf.LogMQEnabled() {
-		log.Info("Message queue logging is disabled. Skipping initialization.")
+		hclog.Default().Info("Message queue logging is disabled. Skipping initialization.")
 		return nil
 	}
 
@@ -70,7 +109,7 @@ func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[[]byt
 
 	aDir, err := filepath.Abs(dir)
 	if err != nil {
-		log.Error("Failed to get absolute path for logs directory", logger.KeyError, err.Error())
+		hclog.Default().Error("Failed to get absolute path for logs directory", logger.KeyError, err.Error())
 		return nil
 	}
 
@@ -78,28 +117,43 @@ func LogQueue(conf *config.Config, log hclog.Logger) varmq.PersistentQueue[[]byt
 
 	persistentQueue, err := sdb.NewQueue(conf.Logging.MQ.Queue, sqliteq.WithRemoveOnComplete(conf.Logging.MQ.Remove))
 	if err != nil {
-		log.Error("Failed to create queue", logger.KeyError, err.Error())
+		hclog.Default().Error("Failed to create queue", logger.KeyError, err.Error())
 	}
 
 	loggerWorker := varmq.NewWorker(
 		func(j varmq.Job[[]byte]) {
-			lj, err := DecodeLoggerJob(j.Data())
+			var logEntry LogEntry
+			err := logEntry.UnmarshalJSON(j.Data())
 			if err != nil {
-				log.Error("Failed to decode log message", logger.KeyError, err)
+				hclog.Default().Error("Failed to unmarshal log message", logger.KeyError, err)
 			}
-			switch lj.Level {
+			// from here we'll extract the data then use the passed in interceptor to log the message
+			lev := hclog.LevelFromString(logEntry.Level)
+			msg := logEntry.Message
+			var args []any
+
+			args = append(args, "caller", logEntry.Caller)
+			args = append(args, "module", logEntry.Module)
+			args = append(args, "orig_timestamp", logEntry.Timestamp)
+
+			for k, v := range logEntry.Fields {
+				args = append(args, k, v)
+			}
+
+			switch lev {
 			case hclog.Trace:
-				log.Trace(lj.Msg, lj.Args...)
+				qLogger.Trace(msg, args...)
 			case hclog.Debug:
-				log.Debug(lj.Msg, lj.Args...)
+				qLogger.Debug(msg, args...)
 			case hclog.Warn:
-				log.Warn(lj.Msg, lj.Args...)
+				qLogger.Warn(msg, args...)
 			case hclog.Error:
-				log.Error(lj.Msg, lj.Args...)
+				qLogger.Error(msg, args...)
 			case hclog.Info:
-				log.Info(lj.Msg, lj.Args...)
+				qLogger.Info(msg, args...)
 			default:
-				log.Info(lj.Msg, lj.Args)
+				qLogger.Info(msg, args...)
+
 			}
 		}, 10,
 	)
