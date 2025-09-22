@@ -85,9 +85,9 @@ func main() {
 	workerPool.Run()
 
 	for i := 0; i < 5; i++ {
+		// this is how you attach a contextual logger to a job
 		jobCtx := hclog.WithContext(context.Background(), multiLogger.Named("job_logger").With("job_id", i))
 		j := worker.NewJob(jobCtx, func(ctx context.Context) (any, error) {
-			fmt.Println("Hello World")
 			return "done", nil
 		})
 		err := workerPool.Submit(j)
@@ -199,7 +199,9 @@ func main() {
 	if len(e) > 0 {
 		multiLogger.Error("Failed to load plugins", logger.KeyError, e)
 	}
-	multiLogger.Info("Plugins loaded", "plugins", p)
+	for d, m := range p.GetManifests() {
+		multiLogger.Info("Plugin loaded", "manifest", m.Manifest(), "dir", d)
+	}
 
 	var pluginMapImported = make(map[string]plugin.Plugin)
 

@@ -22,7 +22,7 @@ var (
 )
 
 // Manifest defines the structure for metadata about a plugin,
-// including details like name, type, version, and maintainer.
+// including details like PluginName, type, version, and maintainer.
 type Manifest struct {
 	PluginData PluginData `json:"plugin" yaml:"plugin"`
 	About      About      `json:"about" yaml:"about"`
@@ -31,7 +31,7 @@ type Manifest struct {
 }
 
 type PluginData struct {
-	Name       string `json:"name" yaml:"name"`
+	Name       string `json:"PluginName" yaml:"PluginName"`
 	Type       string `json:"type" yaml:"type"`
 	Format     string `json:"format" yaml:"format"`
 	Entrypoint string `json:"entrypoint" yaml:"entrypoint"`
@@ -109,18 +109,18 @@ func getMD5Hash(data []byte) string {
 
 func (m *Manifest) ToLaunchDetails() *PluginLaunchDetails {
 	var ld PluginLaunchDetails
-	ld.name = m.PluginData.Name
+	ld.PluginName = m.PluginData.Name
 	hc, err := m.Handshake.ToConfig()
 	if err != nil {
 		hclog.Default().Error("Failed to load plugin launch details", logger.KeyError, err)
 		return nil
 	}
-	ld.handshakeConfig = hc
-	ld.cmd = exec.Command(m.PluginData.Entrypoint)
+	ld.HandshakeConfig = hc
+	ld.Cmd = exec.Command(m.PluginData.Entrypoint)
 	validFormat := AvailablePluginFormatLookup.IsValidFormat(m.PluginData.Format)
 	if validFormat {
 		pf := AvailablePluginFormats.GetByString(m.PluginData.Format)
-		ld.allowedProtocols = pf
+		ld.AllowedProtocols = pf
 	}
 	ld.AutoMTLS = m.Security.AutoMTLS
 	return &ld
