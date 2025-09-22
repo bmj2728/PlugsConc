@@ -28,28 +28,39 @@ Key capabilities
 Logging initialization example (see main.go lines 60–77)
 
 ```
-// Realtime multi-logger (console)
-multiLogger := logger.MultiLogger(conf.Application.AppName, conf.LogLevel(), hclog.ForceColor, conf.AddSource(), false)
-hclog.SetDefault(multiLogger)
-multiLogger.Info("Logger initialized")
-
-// Rotating file for async side
-logRotator := logger.NewRotator(filepath.Join(conf.LogsDir(), conf.LogFilename()),
-    conf.LogMaxSize(),
-    conf.LogMaxBackups(),
-    conf.LogMaxAge(),
-    conf.LogCompress())
-
-// Async side: its own intercept logger + queue + sink registration
-asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
-q := mq.LogQueue(conf, asyncI)
-
-aLogs := logger.AsyncSink("async-sink", q, conf.LogLevel(), hclog.ColorOff, conf.AddSource(), true)
-
-// Bridge realtime -> async via AsyncSink
-multiLogger.RegisterSink(aLogs)
-hclog.SetDefault(multiLogger)
-multiLogger.Info("File logger initialized")
+// Synchronous logger setup:
+	// multilogger is the primary logger for the application.
+	// It is a synchronous intercept logger that writes to console and can be configured to write to 
+	// other io.Writers using sinks.
+	multiLogger := logger.MultiLogger(conf.Application.AppName, conf.LogLevel(), hclog.ForceColor, conf.AddSource(), false)
+	
+	// Sets the default logger to the multilogger.
+	hclog.SetDefault(multiLogger)
+	
+	// Read in the configuration for the file logger.
+	logRotator := logger.NewRotator(filepath.Join(conf.LogsDir(), conf.LogFilename()),
+		conf.LogMaxSize(),
+		conf.LogMaxBackups(),
+		conf.LogMaxAge(),
+		conf.LogCompress())
+	
+	// Asynchronous Logger Setup:
+	// asyncI is an Intercept logger, the choice of io.Writer is up to the user.
+	// This can take additional sinks, similar to the synchronous logger.
+	asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
+	
+	// This initializes the queue and worker for writing async logs
+	q := mq.LogQueue(conf, asyncI)
+	
+	// This creates a specialized sink that gets attached to the synchronous logger and is 
+	// responsible for shipping logs to the queue.
+	aLogs := logger.AsyncSink("async-sink", q, conf.LogLevel(), hclog.ColorOff, conf.AddSource(), true)
+	
+	// This registers the sink with the synchronous intercept logger.
+	multiLogger.RegisterSink(aLogs)
+	
+	// We now have a multi-logger configures to write synchronously to the console and asynchronously to a file.
+	multiLogger.Info("File logger initialized")
 ```
 
 - File watcher
