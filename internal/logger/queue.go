@@ -1,4 +1,4 @@
-package mq
+package logger
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/bmj2728/PlugsConc/internal/config"
-	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/goptics/sqliteq"
 	"github.com/goptics/varmq"
 	"github.com/hashicorp/go-hclog"
@@ -65,7 +64,7 @@ func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[
 
 	aDir, err := filepath.Abs(dir)
 	if err != nil {
-		hclog.Default().Error("Failed to get absolute path for logs directory", logger.KeyError, err.Error())
+		hclog.Default().Error("Failed to get absolute path for logs directory", KeyError, err.Error())
 		return nil
 	}
 
@@ -73,7 +72,7 @@ func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[
 
 	persistentQueue, err := sdb.NewQueue(conf.Logging.MQ.Queue, sqliteq.WithRemoveOnComplete(conf.Logging.MQ.Remove))
 	if err != nil {
-		hclog.Default().Error("Failed to create queue", logger.KeyError, err.Error())
+		hclog.Default().Error("Failed to create queue", KeyError, err.Error())
 	}
 
 	loggerWorker := varmq.NewWorker(
@@ -81,7 +80,7 @@ func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[
 			var logEntry LogEntry
 			err := logEntry.UnmarshalJSON(j.Data())
 			if err != nil {
-				hclog.Default().Error("Failed to unmarshal log message", logger.KeyError, err)
+				hclog.Default().Error("Failed to unmarshal log message", KeyError, err)
 			}
 			// from here we'll extract the data then use the passed in interceptor to log the message
 			lev := hclog.LevelFromString(logEntry.Level)

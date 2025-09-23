@@ -6,7 +6,6 @@ import (
 
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
-	"github.com/bmj2728/PlugsConc/internal/mq"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 
 	"github.com/hashicorp/go-hclog"
@@ -66,7 +65,7 @@ func main() {
 	// This can take additional sinks, similar to the synchronous logger.
 	asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
 	// This initializes the queue and worker for writing async logs
-	q := mq.LogQueue(conf, asyncI)
+	q := logger.LogQueue(conf, asyncI)
 	// This creates a specialized sink that gets attached to the synchronous logger and is
 	// responsible for shipping logs to the queue.
 	aLogs := logger.AsyncSink("async-sink", q, conf.LogLevel(), hclog.ColorOff, conf.AddSource(), true)
