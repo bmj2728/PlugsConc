@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	ErrLogMsgEncoder = errors.New("error encoding log message")
 	ErrLogMsgDecoder = errors.New("error decoding log message")
 )
 
@@ -80,7 +79,7 @@ func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[
 			var logEntry LogEntry
 			err := logEntry.UnmarshalJSON(j.Data())
 			if err != nil {
-				hclog.Default().Error("Failed to unmarshal log message", KeyError, err)
+				hclog.Default().Error("Failed to unmarshal log message", KeyError, errors.Join(ErrLogMsgDecoder, err))
 			}
 			// from here we'll extract the data then use the passed in interceptor to log the message
 			lev := hclog.LevelFromString(logEntry.Level)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
@@ -20,20 +21,24 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
-// generic handshake configuration for testing.
-var handshakeConfig = plugin.HandshakeConfig{
+var catHandshake = plugin.HandshakeConfig{
 	ProtocolVersion:  1,
-	MagicCookieKey:   "ANIMAL_PLUGIN",
-	MagicCookieValue: "hello",
+	MagicCookieKey:   "CAT_PLUGIN",
+	MagicCookieValue: "lFLmoCE3ckw6erJxYxcRd6keedUodVMctD3XOGj9bLMYsFZi1Qh0vKEJftppo5ek",
 }
 
-// manually generated list to be replaced by dynamic discovery.
-var pluginMap = map[string]plugin.Plugin{
-	"dog-grpc": &animal.AnimalGRPCPlugin{},
-	"cat":      &animal.AnimalPlugin{},
+var dogHandshake = plugin.HandshakeConfig{
+	ProtocolVersion:  1,
+	MagicCookieKey:   "DOG_PLUGIN",
+	MagicCookieValue: "2ggRd5S9bhHottawB6eXwghiOAhekGORmOfIczh5b1D3AYlmrRWIXdbqwDHDJmjq",
 }
 
 func main() {
+
+	/*
+		Logger Setup Example w/ config
+	*/
+
 	// Code defined for initial startup prior to configuration loading.
 	tempLogger := logger.DefaultLogger()
 
@@ -81,6 +86,10 @@ func main() {
 	pluginsDir := conf.PluginsDir()
 	multiLogger.Info("Plugins directory", "dir", pluginsDir)
 
+	/*
+		Example General Worker Pool
+	*/
+
 	workerPool := worker.NewPool(500, true, 1000, multiLogger.Named("worker_pool"))
 
 	workerPool.Run()
@@ -89,13 +98,20 @@ func main() {
 		// this is how you attach a contextual logger to a job
 		jobCtx := hclog.WithContext(context.Background(), multiLogger.Named("job_logger").With("job_id", i))
 		j := worker.NewJob(jobCtx, func(ctx context.Context) (any, error) {
-			return "done", nil
+			t := time.Now().Unix()
+			x := 1.0 / float64(t)
+			hclog.FromContext(jobCtx).Info("Done", "time", t)
+			return x, nil
 		})
 		err := workerPool.Submit(j)
 		if err != nil {
 			hclog.FromContext(jobCtx).Error("Failed to submit job", logger.KeyError, err)
 		}
 	}
+
+	/*
+		Example File Watcher
+	*/
 
 	// Initialize plugin filewatcher
 	watcher, err := fsnotify.NewWatcher()
@@ -144,6 +160,10 @@ func main() {
 		}
 	}(watcher)
 
+	/*
+		Plugin Loader
+	*/
+
 	loader, err := registry.NewPluginLoader(pluginsDir, multiLogger)
 	if err != nil {
 		multiLogger.Error("Failed to create plugin loader", logger.KeyError, err)
@@ -161,22 +181,25 @@ func main() {
 
 	for _, m := range p.GetManifests() {
 
-		// map
+		// Generates the PluginMap
 		validType := registry.AvailablePluginTypesLookup.IsValidPluginType(m.Manifest().PluginData.Type)
 		if validType {
 			pt := registry.AvailablePluginTypes.GetByString(m.Manifest().PluginData.Type)
 			pluginMapImported[m.Manifest().PluginData.Name] = pt
 		}
 
+		// Establish plugin root
 		pFolder, err := filepath.Abs(filepath.Join(pluginsDir, m.Manifest().PluginData.Name))
 		if err != nil {
 			multiLogger.Error("Failed to get absolute path", logger.KeyError, err)
 		}
+		// Add this plugin dir to the file watcher
 		err = watcher.Add(pFolder)
 		if err != nil {
 			multiLogger.Error("Failed to add watcher", logger.KeyError, err)
 		}
 
+		// Convert Manifest to LaunchDetails
 		ld := m.Manifest().ToLaunchDetails()
 		multiLogger.Info("Plugin loaded", "launch_details", ld.HandshakeConfig)
 
@@ -205,7 +228,7 @@ func main() {
 	}
 
 	catClient := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig:  handshakeConfig,
+		HandshakeConfig:  catHandshake,
 		Logger:           multiLogger.Named("cat"),
 		Plugins:          pluginMapImported,
 		Cmd:              exec.Command("./plugins/cat/cat"),
@@ -230,7 +253,7 @@ func main() {
 	fmt.Printf("The cat says %s\n", meow)
 
 	gDogClient := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig:  handshakeConfig,
+		HandshakeConfig:  dogHandshake,
 		Plugins:          pluginMapImported,
 		Logger:           multiLogger.Named("dog-grpc"),
 		Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
