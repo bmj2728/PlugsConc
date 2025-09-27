@@ -50,7 +50,7 @@ Logging initialization example (see main.go lines 60–77)
 	asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
 	
 	// This initializes the queue and worker for writing async logs
-	q := mq.LogQueue(conf, asyncI)
+	q := logger.LogQueue(conf, asyncI)
 	
 	// This creates a specialized sink that gets attached to the synchronous logger and is 
 	// responsible for shipping logs to the queue.

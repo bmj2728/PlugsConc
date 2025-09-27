@@ -3,8 +3,8 @@ plugin:
   name: dog-grpc
   type: animal-grpc
   format: grpc
-  language: go
   entrypoint: dog-grpc
+  language: go
   version: 1.0.0
 about:
   description: This plugin is provides a dog implementation of the animal interface

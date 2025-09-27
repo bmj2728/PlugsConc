@@ -19,8 +19,8 @@ func (c Cat) Speak(isLoud bool) string {
 
 var handshakeConfig = plugin.HandshakeConfig{
 	ProtocolVersion:  1,
-	MagicCookieKey:   "ANIMAL_PLUGIN",
-	MagicCookieValue: "hello",
+	MagicCookieKey:   "CAT_PLUGIN",
+	MagicCookieValue: "lFLmoCE3ckw6erJxYxcRd6keedUodVMctD3XOGj9bLMYsFZi1Qh0vKEJftppo5ek",
 }
 
 func main() {

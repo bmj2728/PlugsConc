@@ -29,11 +29,11 @@ logging:
   # Env: LOG_FILE
   log_filename: app.log
   # Env: LOG_MAX_SIZE
-  log_max_size: 10
+  log_max_size: 2
   # Env: LOG_MAX_BACKUPS
-  log_max_backups: 3
+  log_max_backups: 25
   # Env: LOG_MAX_AGE
-  log_max_age: 7
+  log_max_age: 0
   # Env: LOG_COMPRESS
   log_compress: true
   # Env: LOG_ADD_SOURCE

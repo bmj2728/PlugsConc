@@ -20,8 +20,8 @@ func (d Dog) Speak(isLoud bool) string {
 
 var handshakeConfig = plugin.HandshakeConfig{
 	ProtocolVersion:  1,
-	MagicCookieKey:   "ANIMAL_PLUGIN",
-	MagicCookieValue: "hello",
+	MagicCookieKey:   "DOG_PLUGIN",
+	MagicCookieValue: "2ggRd5S9bhHottawB6eXwghiOAhekGORmOfIczh5b1D3AYlmrRWIXdbqwDHDJmjq",
 }
 
 func main() {

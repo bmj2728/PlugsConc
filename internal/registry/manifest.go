@@ -31,7 +31,7 @@ type Manifest struct {
 }
 
 type PluginData struct {
-	Name       string `json:"PluginName" yaml:"PluginName"`
+	Name       string `json:"name" yaml:"name"`
 	Type       string `json:"type" yaml:"type"`
 	Format     string `json:"format" yaml:"format"`
 	Entrypoint string `json:"entrypoint" yaml:"entrypoint"`
