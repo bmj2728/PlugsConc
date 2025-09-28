@@ -3,7 +3,7 @@ plugin:
   name: dog-grpc
   type: animal-grpc
   format: grpc
-  entrypoint: dog-grpc
+  entrypoint: dog
   language: go
   version: 1.0.0
 about:

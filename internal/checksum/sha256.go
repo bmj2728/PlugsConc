@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	CSFileExt = ".sha256"
+	CSFileExt = "sha256"
 )
 
 var (

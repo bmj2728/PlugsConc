@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
@@ -19,6 +20,11 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
+)
+
+const (
+	ConfigDir  = "."
+	ConfigFile = "config.yaml"
 )
 
 var catHandshake = plugin.HandshakeConfig{
@@ -34,7 +40,6 @@ var dogHandshake = plugin.HandshakeConfig{
 }
 
 func main() {
-
 	/*
 		Logger Setup Example w/ config
 	*/
@@ -42,7 +47,7 @@ func main() {
 	// Code defined for initial startup prior to configuration loading.
 	tempLogger := logger.DefaultLogger()
 
-	cr, err := os.OpenRoot(".")
+	cr, err := os.OpenRoot(ConfigDir)
 	if err != nil {
 		tempLogger.Error("Failed to open root", logger.KeyError, err)
 	}
@@ -54,8 +59,10 @@ func main() {
 	}(cr)
 
 	tempLogger.Info("Root opened")
-	conf := config.LoadConfig(cr, "config.yaml")
+
+	conf := config.LoadConfig(cr, ConfigFile)
 	tempLogger.Info("Config loaded", "config", conf.Application.AppName)
+
 	// Synchronous logger setup:
 	// multilogger is the primary logger for the application.
 	// It is a synchronous intercept logger that writes to console and can be configured to write to
@@ -82,9 +89,6 @@ func main() {
 	multiLogger.RegisterSink(aLogs)
 	// We now have a multi-logger configures to write synchronously to the console and asynchronously to a file.
 	multiLogger.Info("File logger initialized")
-
-	pluginsDir := conf.PluginsDir()
-	multiLogger.Info("Plugins directory", "dir", pluginsDir)
 
 	/*
 		Example General Worker Pool
@@ -161,9 +165,23 @@ func main() {
 	}(watcher)
 
 	/*
-		Plugin Loader
+		Plugin Loading
 	*/
 
+	// Get the configured plugins directory
+	pluginsDir := conf.PluginsDir()
+	multiLogger.Info("Plugins directory", "dir", pluginsDir)
+	// Add the plugins directory to the file watcher using the absolute path
+	pAbs, err := filepath.Abs(pluginsDir)
+	if err != nil {
+		multiLogger.Error("Failed to get absolute path for plugins", logger.KeyError, err)
+	}
+	err = watcher.Add(pAbs)
+	if err != nil {
+		multiLogger.Error("Failed to add plugins directory", logger.KeyError, err)
+	}
+
+	// Load plugins
 	loader, err := registry.NewPluginLoader(pluginsDir, multiLogger)
 	if err != nil {
 		multiLogger.Error("Failed to create plugin loader", logger.KeyError, err)
@@ -201,7 +219,9 @@ func main() {
 
 		// Convert Manifest to LaunchDetails
 		ld := m.Manifest().ToLaunchDetails()
-		multiLogger.Info("Plugin loaded", "launch_details", ld.HandshakeConfig)
+		if ld != nil {
+			multiLogger.Info("Plugin loaded", "launch_details", ld.HandshakeConfig)
+		}
 
 	}
 
@@ -217,8 +237,8 @@ func main() {
 		}
 	}(open)
 
-	entrypoint := "cat"
-	csFilename := entrypoint + checksum.CSFileExt
+	entrypoint := "plugin"
+	csFilename := strings.Join([]string{entrypoint, checksum.CSFileExt}, ".")
 
 	secConf, err := checksum.LoadSHA256(open, csFilename)
 	if err != nil {
@@ -256,7 +276,7 @@ func main() {
 		HandshakeConfig:  dogHandshake,
 		Plugins:          pluginMapImported,
 		Logger:           multiLogger.Named("dog-grpc"),
-		Cmd:              exec.Command("./plugins/dog-grpc/dog-grpc"),
+		Cmd:              exec.Command("./plugins/dog-grpc/dog"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
 		AutoMTLS:         true,
 	})
