@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/bmj2728/PlugsConc/internal/capability"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
@@ -24,10 +25,11 @@ var (
 // Manifest defines the structure for metadata about a plugin,
 // including details like PluginName, type, version, and maintainer.
 type Manifest struct {
-	PluginData PluginData `json:"plugin" yaml:"plugin"`
-	About      About      `json:"about" yaml:"about"`
-	Handshake  Handshake  `json:"handshake" yaml:"handshake"`
-	Security   Security   `json:"security" yaml:"security"`
+	PluginData   PluginData              `json:"plugin" yaml:"plugin"`
+	About        About                   `json:"about" yaml:"about"`
+	Handshake    Handshake               `json:"handshake" yaml:"handshake"`
+	Security     Security                `json:"security" yaml:"security"`
+	Capabilities capability.Capabilities `json:"capabilities" yaml:"capabilities"`
 }
 
 type PluginData struct {

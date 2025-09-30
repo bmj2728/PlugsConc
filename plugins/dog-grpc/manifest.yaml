@@ -16,3 +16,30 @@ handshake:
   magic_cookie_value: 2ggRd5S9bhHottawB6eXwghiOAhekGORmOfIczh5b1D3AYlmrRWIXdbqwDHDJmjq
 security:
   auto_mtls: true
+capabilities:
+  filesystem:
+    # Grant access to specific dir
+    - path: "/home/user/data/"
+      permissions: [read, write, list, create, delete]
+      recursive: true # Explicitly grant for subdirectories
+    # Grant access to a specific file
+    - path: "/etc/config.json"
+      permissions: [read]
+      recursive: false # Default, will be ignored for files
+  network:
+    egress: # Outbound connections
+      - protocol: "tcp"
+        hosts: [ "api.example.com", "192.168.1.100" ]
+        ports: [ 443, 8080 ]
+    ingress: # Inbound connections
+      - protocol: "tcp"
+        ports: [ 9000 ]
+        allowed_origins: [ "192.168.1.100", "192.168.1.101" ]
+  process:
+    # Allow executing only specific, whitelisted commands
+    - exec:
+        command: "/usr/bin/rsync"
+        args: [ "-a", "--delete", "*" ] # Allow specific arguments or wildcards
+    # Scope process management to only children spawned by the plugin itself
+    - kill: [ children ]
+    - list: [ children ]
