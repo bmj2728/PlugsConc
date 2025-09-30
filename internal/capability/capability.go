@@ -4,7 +4,7 @@ package capability
 type Capabilities struct {
 	Filesystem []FileSystemCapability `yaml:"filesystem,omitempty"`
 	Network    *NetworkCapability     `yaml:"network,omitempty"`
-	Process    []ProcessCapability    `yaml:"process,omitempty"`
+	Process    *ProcessCapability     `yaml:"process,omitempty"`
 }
 
 // FileSystemCapability defines permissions for a specific path.
@@ -37,10 +37,10 @@ type IngressRule struct {
 // ProcessCapability defines a process-related permission.
 // Using pointers allows us to easily determine which type of rule it is.
 type ProcessCapability struct {
-	Exec   *ExecRule `yaml:"exec,omitempty"`
-	Kill   []string  `yaml:"kill,omitempty"`
-	List   []string  `yaml:"list,omitempty"`
-	Signal []string  `yaml:"signal,omitempty"`
+	Exec   []ExecRule `yaml:"exec,omitempty"`
+	Kill   []string   `yaml:"kill,omitempty"`
+	List   []string   `yaml:"list,omitempty"`
+	Signal []string   `yaml:"signal,omitempty"`
 }
 
 // ExecRule defines the constraints for executing a command.

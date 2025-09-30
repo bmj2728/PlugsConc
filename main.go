@@ -1,20 +1,17 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/registry"
-	"github.com/bmj2728/PlugsConc/internal/worker"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
 	"github.com/fsnotify/fsnotify"
 
@@ -94,24 +91,24 @@ func main() {
 		Example General Worker Pool
 	*/
 
-	workerPool := worker.NewPool(500, true, 1000, multiLogger.Named("worker_pool"))
-
-	workerPool.Run()
-
-	for i := 0; i < 5; i++ {
-		// this is how you attach a contextual logger to a job
-		jobCtx := hclog.WithContext(context.Background(), multiLogger.Named("job_logger").With("job_id", i))
-		j := worker.NewJob(jobCtx, func(ctx context.Context) (any, error) {
-			t := time.Now().Unix()
-			x := 1.0 / float64(t)
-			hclog.FromContext(jobCtx).Info("Done", "time", t)
-			return x, nil
-		})
-		err := workerPool.Submit(j)
-		if err != nil {
-			hclog.FromContext(jobCtx).Error("Failed to submit job", logger.KeyError, err)
-		}
-	}
+	//workerPool := worker.NewPool(500, true, 1000, multiLogger.Named("worker_pool"))
+	//
+	//workerPool.Run()
+	//
+	//for i := 0; i < 5; i++ {
+	//	// this is how you attach a contextual logger to a job
+	//	jobCtx := hclog.WithContext(context.Background(), multiLogger.Named("job_logger").With("job_id", i))
+	//	j := worker.NewJob(jobCtx, func(ctx context.Context) (any, error) {
+	//		t := time.Now().Unix()
+	//		x := 1.0 / float64(t)
+	//		hclog.FromContext(jobCtx).Info("Done", "time", t)
+	//		return x, nil
+	//	})
+	//	err := workerPool.Submit(j)
+	//	if err != nil {
+	//		hclog.FromContext(jobCtx).Error("Failed to submit job", logger.KeyError, err)
+	//	}
+	//}
 
 	/*
 		Example File Watcher
@@ -221,6 +218,30 @@ func main() {
 		ld := m.Manifest().ToLaunchDetails()
 		if ld != nil {
 			multiLogger.Info("Plugin loaded", "launch_details", ld.HandshakeConfig)
+		}
+
+		fsCap := m.Manifest().Capabilities.Filesystem
+		for _, f := range fsCap {
+			multiLogger.Info("Filesystem capability detected", "filesystem", f)
+		}
+
+		network := m.Manifest().Capabilities.Network
+		if network != nil {
+			multiLogger.Info("Network capability detected", "network", *network)
+		}
+
+		procCap := m.Manifest().Capabilities.Process
+		for _, p := range procCap.Exec {
+			multiLogger.Info("Process capability detected", "exec", p)
+		}
+		for _, p := range procCap.Kill {
+			multiLogger.Info("Process capability detected", "kill", p)
+		}
+		for _, p := range procCap.List {
+			multiLogger.Info("Process capability detected", "list", p)
+		}
+		for _, p := range procCap.Signal {
+			multiLogger.Info("Process capability detected", "signal", p)
 		}
 
 	}

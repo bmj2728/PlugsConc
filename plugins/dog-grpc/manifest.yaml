@@ -37,9 +37,11 @@ capabilities:
         allowed_origins: [ "192.168.1.100", "192.168.1.101" ]
   process:
     # Allow executing only specific, whitelisted commands
-    - exec:
-        command: "/usr/bin/rsync"
-        args: [ "-a", "--delete", "*" ] # Allow specific arguments or wildcards
-    # Scope process management to only children spawned by the plugin itself
-    - kill: [ children ]
-    - list: [ children ]
+    exec: # This is a list to allow multiple commands
+      - command: "/usr/bin/rsync"
+        args: [ "-a", "--delete", "*" ]
+      - command: "/usr/bin/git"
+        args: [ "pull" ]
+    kill: [ children ]
+    list: [ children ]
+    signal: [ children ]
