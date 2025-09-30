@@ -216,6 +216,64 @@ Security: checksums + handshake
 - HandshakeConfig is built from manifest values; missing required fields produce errors.
 - Optional AutoMTLS can be enabled.
 
+Capabilities and sandboxing
+- Purpose: Sensitive operations (filesystem, network, process) are mediated by host services. Plugins do not touch the OS directly; instead, they request operations via host‑provided services. Requested capabilities in the plugin manifest inform what the host may allow at runtime, enabling robust sandboxing and least‑privilege defaults.
+- Types: See internal/capability/capability.go for the schema mirrored in manifests.
+  - Filesystem: a list of path‑scoped grants with permissions.
+    - path: file or directory path
+    - permissions: any of [read, write, list, create, delete]
+    - recursive: whether the grant applies to subdirectories (dirs only)
+  - Network: split into egress and ingress rule sets.
+    - egress: [{ protocol: tcp|udp, hosts: [hostname|IP], ports: [int] }]
+    - ingress: [{ protocol: tcp|udp, ports: [int], allowed_origins: [IP/CIDR/host] }]
+  - Process: controls executing and managing processes.
+    - exec: { command: string, args: [string] } — whitelist of allowed commands/args the plugin may ask the host to run
+    - kill: [scopes] — e.g., ["children"] to restrict to processes spawned for this plugin
+    - list: [scopes] — e.g., ["children"]
+    - signal: [scopes] — if used, same scoping semantics
+- Relation to manifests: The Manifest struct includes `capabilities` and is parsed by the registry loader. Enforcement is performed by host services (future/ongoing work). If a capability is not requested (or the section is omitted), the default is deny.
+
+Declaring capabilities in a plugin manifest
+- Add a top‑level `capabilities` section alongside `plugin`, `about`, `handshake`, and `security`.
+- Example (abridged):
+
+  capabilities:
+    filesystem:
+      - path: "/home/user/data/"
+        permissions: [read, write, list, create, delete]
+        recursive: true
+      - path: "/etc/config.json"
+        permissions: [read]
+    network:
+      egress:
+        - protocol: tcp
+          hosts: [ "api.example.com", "192.168.1.100" ]
+          ports: [ 443, 8080 ]
+      ingress:
+        - protocol: tcp
+          ports: [ 9000 ]
+          allowed_origins: [ "192.168.1.100", "192.168.1.101" ]
+    process:
+      - exec:
+          command: "/usr/bin/rsync"
+          args: [ "-a", "--delete", "*" ]
+      - kill: [ children ]
+      - list: [ children ]
+
+Host services expectations
+- FilesystemService: validates path + permission + recursion before reads/writes/creates/deletes.
+- NetworkService: validates egress by (protocol, host, port) and ingress by (protocol, port, origin) before connecting/listening.
+- ProcessService: validates exec requests against the whitelist; kill/list/signal requests are scoped (e.g., only children). Host may log and deny non‑granted operations.
+
+Best practices for plugin authors
+- Request the minimum needed privileges; manifests are reviewed and can be rejected by the host.
+- Use explicit paths and ports; avoid wildcards unless absolutely necessary.
+- Keep capability requests stable; changing them will trigger re‑review in managed environments.
+
+Examples in this repo
+- See manifest.example.yaml for a complete sample.
+- The sample cat and dog‑grpc manifests under plugins/ include a capabilities section demonstrating filesystem/network/process requests.
+
 Using plugins from main
 - A manual pluginMap with known keys (cat, dog, pig, cow, horse, dog‑grpc) is provided for demo.
 - registry.NewPluginLoader(conf.PluginsDir(), log).Load() discovers manifests and logs launch details.
