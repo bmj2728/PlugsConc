@@ -237,6 +237,7 @@ func main() {
 	}
 
 	multiLogger.Info("Checksum parsed successfully", "hex", cSHA.Hash(), "file", cSHA.FileName())
+	multiLogger.Info("Checksum valid", "valid", cSHA.Compare())
 
 	secConf, err := cSHA.SecConf()
 	if err != nil {

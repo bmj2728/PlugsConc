@@ -2,6 +2,7 @@ package checksum
 
 import (
 	"crypto"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"io/fs"
@@ -118,4 +119,28 @@ func (sf *SHA256File) SecConf() (*plugin.SecureConfig, error) {
 		Checksum: checksumBytes,
 		Hash:     crypto.SHA256.New(),
 	}, nil
+}
+
+func (sf *SHA256File) Compare() bool {
+	r, err := os.OpenRoot(sf.path)
+	if err != nil {
+		err = errors.Join(ErrInvalidChecksumPath, err)
+		hclog.Default().Error("Failed to open checksum file", logger.KeyError, err)
+		return false
+	}
+	defer func(r *os.Root) {
+		err := r.Close()
+		if err != nil {
+			hclog.Default().Error("Failed to close checksum file", logger.KeyError, err)
+		}
+	}(r)
+
+	fileBytes, err := fs.ReadFile(r.FS(), sf.FileName())
+	if err != nil {
+		err := errors.Join(ErrInvalidChecksum, err)
+		hclog.Default().Error("Failed to read checksum file", logger.KeyError, err)
+		return false
+	}
+	compHash := sha256.Sum256(fileBytes)
+	return sf.Hash() == hex.EncodeToString(compHash[:])
 }
