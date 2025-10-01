@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
-	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/bmj2728/PlugsConc/internal/logger"
 	"github.com/bmj2728/PlugsConc/internal/registry"
 	"github.com/bmj2728/PlugsConc/shared/pkg/animal"
@@ -41,51 +40,32 @@ func main() {
 		Logger Setup Example w/ config
 	*/
 
-	// Code defined for initial startup prior to configuration loading.
-	tempLogger := logger.DefaultLogger()
-
-	cr, err := os.OpenRoot(ConfigDir)
-	if err != nil {
-		tempLogger.Error("Failed to open root", logger.KeyError, err)
-	}
-	defer func(cr *os.Root) {
-		err := cr.Close()
-		if err != nil {
-			tempLogger.Error("Failed to close root", logger.KeyError, err)
-		}
-	}(cr)
-
-	tempLogger.Info("Root opened")
-
-	conf := config.LoadConfig(cr, ConfigFile)
-	tempLogger.Info("Config loaded", "config", conf.Application.AppName)
-
 	// Synchronous logger setup:
 	// multilogger is the primary logger for the application.
 	// It is a synchronous intercept logger that writes to console and can be configured to write to
 	// other io.Writers using sinks.
-	multiLogger := logger.MultiLogger(conf.Application.AppName, conf.LogLevel(), hclog.ForceColor, conf.AddSource(), false)
+	multiLogger := logger.MultiLogger("app-name", hclog.Info, hclog.ForceColor, true, false)
 	// Sets the default logger to the multilogger.
 	hclog.SetDefault(multiLogger)
-	// Read in the configuration for the file logger.
-	logRotator := logger.NewRotator(filepath.Join(conf.LogsDir(), conf.LogFilename()),
-		conf.LogMaxSize(),
-		conf.LogMaxBackups(),
-		conf.LogMaxAge(),
-		conf.LogCompress())
-	// Asynchronous Logger Setup:
-	// asyncI is an Intercept logger, the choice of io.Writer is up to the user.
-	// This can take additional sinks, similar to the synchronous logger.
-	asyncI := logger.AsyncInterceptLogger("async-app-logs", conf.LogLevel(), logRotator, hclog.ColorOff, false, true)
-	// This initializes the queue and worker for writing async logs
-	q := logger.LogQueue(conf, asyncI)
-	// This creates a specialized sink that gets attached to the synchronous logger and is
-	// responsible for shipping logs to the queue.
-	aLogs := logger.AsyncSink("async-sink", q, conf.LogLevel(), hclog.ColorOff, conf.AddSource(), true)
-	// This registers the sink with the synchronous intercept logger.
-	multiLogger.RegisterSink(aLogs)
-	// We now have a multi-logger configures to write synchronously to the console and asynchronously to a file.
-	multiLogger.Info("File logger initialized")
+	//// Read in the configuration for the file logger.
+	//logRotator := logger.NewRotator(filepath.Join("./logs", "app.log"),
+	//	2,
+	//	25,
+	//	90,
+	//	true)
+	//// Asynchronous Logger Setup:
+	//// asyncI is an Intercept logger, the choice of io.Writer is up to the user.
+	//// This can take additional sinks, similar to the synchronous logger.
+	//asyncI := logger.AsyncInterceptLogger("async-app-logs", hclog.Info, logRotator, hclog.ColorOff, false, true)
+	//// This initializes the queue and worker for writing async logs
+	//q := logger.LogQueue(conf, asyncI)
+	//// This creates a specialized sink that gets attached to the synchronous logger and is
+	//// responsible for shipping logs to the queue.
+	//aLogs := logger.AsyncSink("async-sink", q, hclog.Info, hclog.ColorOff, true, true)
+	//// This registers the sink with the synchronous intercept logger.
+	//multiLogger.RegisterSink(aLogs)
+	//// We now have a multi-logger configures to write synchronously to the console and asynchronously to a file.
+	//multiLogger.Info("File logger initialized")
 
 	/*
 		Example General Worker Pool
@@ -166,7 +146,7 @@ func main() {
 	*/
 
 	// Get the configured plugins directory
-	pluginsDir := conf.PluginsDir()
+	pluginsDir := "./plugins"
 	multiLogger.Info("Plugins directory", "dir", pluginsDir)
 	// Add the plugins directory to the file watcher using the absolute path
 	pAbs, err := filepath.Abs(pluginsDir)
@@ -246,7 +226,7 @@ func main() {
 
 	}
 
-	pRoot := filepath.Join(conf.PluginsDir(), "cat")
+	pRoot := filepath.Join("./plugins", "cat")
 	open, err := os.OpenRoot(pRoot)
 	if err != nil {
 		multiLogger.Error("Failed to open root", logger.KeyError, err)

@@ -1,60 +1,14 @@
-# Directories section is used for configurable paths
-application:
-  # Env: APP_NAME
-  app_name: Plugin Manager
-  # Env: APP_MODE
-  app_mode: dev
-  app_version:
-    # Env: APP_VERSION_MAJOR
+general:
+  name: my application
+  mode: dev
+  version:
     major: 0
-    # Env: APP_VERSION_MINOR
     minor: 1
-    # Env: APP_VERSION_PATCH
     patch: 0
-    # Env: APP_VERSION_FULL
-    full: 0.1.0
-    # Env: APP_VERSION_CODENAME
-    codename: pluggy
-directories:
-  # Env: PLUGINS_DIR
-  plugins_dir: ./plugins
-  # Env: PLUGIN_CONFIGS_DIR
-  plugin_configs_dir: ./plugins.d
-  # Env: LOGS_DIR
-  logs_dir: ./logs
-# Logging section is used for configurable logging
+    codename: affable-adams
+    tags:
+      - some
+      - tags
+      - here
 logging:
-  # Env: LOG_LEVEL
-  log_level: info
-  # Env: LOG_FILE
-  log_filename: app.log
-  # Env: LOG_MAX_SIZE
-  log_max_size: 2
-  # Env: LOG_MAX_BACKUPS
-  log_max_backups: 25
-  # Env: LOG_MAX_AGE
-  log_max_age: 0
-  # Env: LOG_COMPRESS
-  log_compress: true
-  # Env: LOG_ADD_SOURCE
-  log_include_location: true
-  # log_mq is used to enable a persistent queue for async logging
-  log_mq:
-    # Env: LOG_ENABLE_PERSISTENT_QUEUE
-    log_enable_persistent_queue: true
-    # Env: LOG_DB_FILE
-    log_db_file: logs.db
-    # Env: LOG_QUEUE
-    log_queue: log_queue
-    # Env: LOG_REMOVE_ON_COMPLETE
-    log_remove_on_complete: false
-# File watcher section is used for plugin file watcher
-file_watcher:
-  # Env: FILE_WATCHER_ENABLED
-  fw_enabled: true
-  # Env: FILE_WATCHER_WATCH_PLUGINS
-  fw_watch_plugins: true
-# Worker pool section is used for the worker pool
-worker_pool:
-  # Env: MAX_WORKERS
-  wp_max_workers: 1000
+  level: debug
