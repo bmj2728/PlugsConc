@@ -236,6 +236,8 @@ func main() {
 		return
 	}
 
+	multiLogger.Info("Checksum parsed successfully", "hex", cSHA.Hash(), "file", cSHA.FileName())
+
 	secConf, err := cSHA.SecConf()
 	if err != nil {
 		multiLogger.Error("Failed to get secure config", logger.KeyError, err)

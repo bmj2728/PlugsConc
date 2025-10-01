@@ -14,21 +14,27 @@ import (
 	"github.com/hashicorp/go-plugin"
 )
 
+// CSFileName is the filename used to represent the checksum file, typically named "plugin.sha256".
 const (
 	CSFileName = "plugin.sha256"
 )
 
+// ErrInvalidChecksum indicates that the checksum file is invalid.
+// ErrInvalidChecksumPath indicates that the checksum file path is invalid.
 var (
 	ErrInvalidChecksum     = errors.New("invalid checksum file")
 	ErrInvalidChecksumPath = errors.New("invalid checksum file path")
 )
 
+// SHA256File represents a file containing a SHA-256 checksum and an associated file name for validation purposes.
 type SHA256File struct {
 	path     string
 	hexHash  string
 	fileName string
 }
 
+// NewSHA256File creates a new SHA256File instance with the given directory path.
+// Returns an error if the path is empty or invalid.
 func NewSHA256File(dir string) (*SHA256File, error) {
 	// Check that path is not empty
 	if dir == "" {
@@ -46,10 +52,23 @@ func NewSHA256File(dir string) (*SHA256File, error) {
 	return sf, nil
 }
 
+// Path returns the file path associated with the SHA256File instance.
 func (sf *SHA256File) Path() string {
 	return sf.path
 }
 
+// Hash returns the hexadecimal hash string computed for the associated file.
+func (sf *SHA256File) Hash() string {
+	return sf.hexHash
+}
+
+// FileName returns the name of the file associated with the SHA256File instance.
+func (sf *SHA256File) FileName() string {
+	return sf.fileName
+}
+
+// Parse reads and validates the checksum file, extracting the hash and file name, and updates the SHA256File receiver.
+// Returns an error if the file cannot be opened, read, or has an invalid format.
 func (sf *SHA256File) Parse() error {
 	r, err := os.OpenRoot(sf.path)
 	if err != nil {
@@ -84,11 +103,12 @@ func (sf *SHA256File) Parse() error {
 	return nil
 }
 
+// SecConf generates a SecureConfig instance with the checksum and SHA-256 hash if the checksum is valid, otherwise returns an error.
 func (sf *SHA256File) SecConf() (*plugin.SecureConfig, error) {
 	if sf.hexHash == "" {
 		return nil, ErrInvalidChecksum
 	}
-	checksumBytes, err := hex.DecodeString(sf.hexHash)
+	checksumBytes, err := hex.DecodeString(sf.Hash())
 	if err != nil {
 		err := errors.Join(ErrInvalidChecksum, err)
 		hclog.Default().Error("Failed to parse checksum file", logger.KeyError, err)
