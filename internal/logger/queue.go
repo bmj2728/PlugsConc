@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bmj2728/PlugsConc/internal/config"
 	"github.com/goptics/sqliteq"
 	"github.com/goptics/varmq"
 	"github.com/hashicorp/go-hclog"
@@ -53,13 +52,9 @@ func (l *LogEntry) UnmarshalJSON(data []byte) error {
 
 // LogQueue handles the initialization of a persistent log queue, processes jobs, and logs messages based on
 // their severity level.
-func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[]byte] {
-	if !conf.LogMQEnabled() {
-		hclog.Default().Info("Message queue logging is disabled. Skipping initialization.")
-		return nil
-	}
+func LogQueue(qLogger hclog.Logger) varmq.PersistentQueue[[]byte] {
 
-	dir := conf.LogsDir()
+	dir := "/home/brian/GolandProjects/PlugsConc/logs"
 
 	aDir, err := filepath.Abs(dir)
 	if err != nil {
@@ -67,9 +62,9 @@ func LogQueue(conf *config.Config, qLogger hclog.Logger) varmq.PersistentQueue[[
 		return nil
 	}
 
-	sdb := sqliteq.New(filepath.Join(aDir, conf.LogMQFile()))
+	sdb := sqliteq.New(filepath.Join(aDir, "logs.db"))
 
-	persistentQueue, err := sdb.NewQueue(conf.Logging.MQ.Queue, sqliteq.WithRemoveOnComplete(conf.Logging.MQ.Remove))
+	persistentQueue, err := sdb.NewQueue("log-queue", sqliteq.WithRemoveOnComplete(true))
 	if err != nil {
 		hclog.Default().Error("Failed to create queue", KeyError, err.Error())
 	}

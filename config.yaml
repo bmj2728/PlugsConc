@@ -1,14 +1,23 @@
 general:
+  # Env: NG_APPLICATION_NAME
   name: my application
+  # Env: NG_APPLICATION_MODE # dev, prod, test
   mode: dev
+  # Env: NG_APPLICATION_VERSION
   version:
+    # Env: NG_VERSION_MAJOR
     major: 0
+    # Env: NG_VERSION_MINOR
     minor: 1
+    # Env: NG_VERSION_PATCH
     patch: 0
+    # Env: NG_VERSION_CODENAME
     codename: affable-adams
+    # Env: NG_VERSION_TAGS # comma separated e.g. "some,tags,here"
     tags:
       - some
       - tags
       - here
 logging:
+  # Env: NG_LOGGING_LEVEL
   level: debug

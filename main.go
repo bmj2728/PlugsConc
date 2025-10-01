@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/bmj2728/PlugsConc/internal/checksum"
 	"github.com/bmj2728/PlugsConc/internal/logger"
@@ -226,26 +225,21 @@ func main() {
 
 	}
 
-	pRoot := filepath.Join("./plugins", "cat")
-	open, err := os.OpenRoot(pRoot)
-	if err != nil {
-		multiLogger.Error("Failed to open root", logger.KeyError, err)
-	}
-	defer func(open *os.Root) {
-		err := open.Close()
-		if err != nil {
-			multiLogger.Error("Failed to close root", logger.KeyError, err)
-		}
-	}(open)
-
-	entrypoint := "plugin"
-	csFilename := strings.Join([]string{entrypoint, checksum.CSFileExt}, ".")
-
-	secConf, err := checksum.LoadSHA256(open, csFilename)
+	cSHA, err := checksum.NewSHA256File("./plugins/cat")
 	if err != nil {
 		multiLogger.Error("Failed to load checksum", logger.KeyError, err)
-	} else {
-		multiLogger.Info("Checksum loaded successfully")
+		return
+	}
+	err = cSHA.Parse()
+	if err != nil {
+		multiLogger.Error("Failed to parse checksum", logger.KeyError, err)
+		return
+	}
+
+	secConf, err := cSHA.SecConf()
+	if err != nil {
+		multiLogger.Error("Failed to get secure config", logger.KeyError, err)
+		return
 	}
 
 	catClient := plugin.NewClient(&plugin.ClientConfig{
