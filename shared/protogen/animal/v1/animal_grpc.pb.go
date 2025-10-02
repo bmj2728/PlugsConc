@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             (unknown)
-// source: animalpb/animal.proto
+// source: animal/v1/animal.proto
 
-package animalpb
+package animalv1
 
 import (
 	context "context"
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Animal_Speak_FullMethodName = "/proto.Animal/Speak"
+	Animal_Speak_FullMethodName = "/animal.v1.Animal/Speak"
 )
 
 // AnimalClient is the client API for Animal service.
@@ -108,7 +108,7 @@ func _Animal_Speak_Handler(srv interface{}, ctx context.Context, dec func(interf
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Animal_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.Animal",
+	ServiceName: "animal.v1.Animal",
 	HandlerType: (*AnimalServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -117,5 +117,5 @@ var Animal_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "animalpb/animal.proto",
+	Metadata: "animal/v1/animal.proto",
 }

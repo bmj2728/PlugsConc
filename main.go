@@ -270,6 +270,27 @@ func main() {
 	meow := cat.(animal.Animal).Speak(true)
 	fmt.Printf("The cat says %s\n", meow)
 
+	dSHA, err := checksum.NewSHA256File("./plugins/dog-grpc")
+	if err != nil {
+		multiLogger.Error("Failed to create SHA256File", logger.KeyError, err)
+		os.Exit(1)
+	}
+
+	err = dSHA.Parse()
+	if err != nil {
+		multiLogger.Error("Failed to parse SHA256File", logger.KeyError, err)
+		os.Exit(1)
+	}
+
+	multiLogger.Info("SHA256File parsed successfully", "hex", dSHA.Hash(), "file", dSHA.FileName())
+	multiLogger.Info("SHA256File valid", "valid", dSHA.Compare())
+
+	secConf, err = dSHA.SecConf()
+	if err != nil {
+		multiLogger.Error("Failed to get secure config", logger.KeyError, err)
+		os.Exit(1)
+	}
+
 	gDogClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  dogHandshake,
 		Plugins:          pluginMapImported,
@@ -277,6 +298,7 @@ func main() {
 		Cmd:              exec.Command("./plugins/dog-grpc/dog"),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
 		AutoMTLS:         true,
+		SecureConfig:     secConf,
 	})
 	defer gDogClient.Kill()
 

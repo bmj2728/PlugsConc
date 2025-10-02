@@ -1,0 +1,24 @@
+syntax = "proto3";
+package filesystem.v1;
+option go_package = "github.com/bmj2728/PlugsConc/shared/protogen/filesystem/v1;filesystemv1";
+
+service FileSystem {
+  rpc ListFiles(ListFileRequest) returns (ListFileResponse);
+  rpc IsDir(IsDirRequest) returns (IsDirResponse);
+}
+
+message ListFileRequest {
+  string path = 1;
+}
+
+message ListFileResponse {
+  repeated string filename = 1;
+}
+
+message IsDirRequest {
+  string path = 1;
+}
+
+message IsDirResponse {
+  bool isDir = 1;
+}

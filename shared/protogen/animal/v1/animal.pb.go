@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.9
 // 	protoc        (unknown)
-// source: animalpb/animal.proto
+// source: animal/v1/animal.proto
 
-package animalpb
+package animalv1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -30,7 +30,7 @@ type SpeakRequest struct {
 
 func (x *SpeakRequest) Reset() {
 	*x = SpeakRequest{}
-	mi := &file_animalpb_animal_proto_msgTypes[0]
+	mi := &file_animal_v1_animal_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *SpeakRequest) String() string {
 func (*SpeakRequest) ProtoMessage() {}
 
 func (x *SpeakRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_animalpb_animal_proto_msgTypes[0]
+	mi := &file_animal_v1_animal_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *SpeakRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SpeakRequest.ProtoReflect.Descriptor instead.
 func (*SpeakRequest) Descriptor() ([]byte, []int) {
-	return file_animalpb_animal_proto_rawDescGZIP(), []int{0}
+	return file_animal_v1_animal_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SpeakRequest) GetIsLoud() bool {
@@ -74,7 +74,7 @@ type SpeakResponse struct {
 
 func (x *SpeakResponse) Reset() {
 	*x = SpeakResponse{}
-	mi := &file_animalpb_animal_proto_msgTypes[1]
+	mi := &file_animal_v1_animal_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *SpeakResponse) String() string {
 func (*SpeakResponse) ProtoMessage() {}
 
 func (x *SpeakResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_animalpb_animal_proto_msgTypes[1]
+	mi := &file_animal_v1_animal_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *SpeakResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SpeakResponse.ProtoReflect.Descriptor instead.
 func (*SpeakResponse) Descriptor() ([]byte, []int) {
-	return file_animalpb_animal_proto_rawDescGZIP(), []int{1}
+	return file_animal_v1_animal_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SpeakResponse) GetResp() string {
@@ -109,39 +109,40 @@ func (x *SpeakResponse) GetResp() string {
 	return ""
 }
 
-var File_animalpb_animal_proto protoreflect.FileDescriptor
+var File_animal_v1_animal_proto protoreflect.FileDescriptor
 
-const file_animalpb_animal_proto_rawDesc = "" +
+const file_animal_v1_animal_proto_rawDesc = "" +
 	"\n" +
-	"\x15animalpb/animal.proto\x12\x05proto\"&\n" +
+	"\x16animal/v1/animal.proto\x12\tanimal.v1\"&\n" +
 	"\fSpeakRequest\x12\x16\n" +
 	"\x06isLoud\x18\x01 \x01(\bR\x06isLoud\"#\n" +
 	"\rSpeakResponse\x12\x12\n" +
-	"\x04resp\x18\x01 \x01(\tR\x04resp2<\n" +
-	"\x06Animal\x122\n" +
-	"\x05Speak\x12\x13.proto.SpeakRequest\x1a\x14.proto.SpeakResponseB\x83\x01\n" +
-	"\tcom.protoB\vAnimalProtoP\x01Z5github.com/bmj2728/PlugsConc/shared/protogen/animalpb\xa2\x02\x03PXX\xaa\x02\x05Proto\xca\x02\x05Proto\xe2\x02\x11Proto\\GPBMetadata\xea\x02\x05Protob\x06proto3"
+	"\x04resp\x18\x01 \x01(\tR\x04resp2D\n" +
+	"\x06Animal\x12:\n" +
+	"\x05Speak\x12\x17.animal.v1.SpeakRequest\x1a\x18.animal.v1.SpeakResponseB\xa2\x01\n" +
+	"\rcom.animal.v1B\vAnimalProtoP\x01Z?github.com/bmj2728/PlugsConc/shared/protogen/animal/v1;animalv1\xa2\x02\x03AXX\xaa\x02\tAnimal.V1\xca\x02\tAnimal\\V1\xe2\x02\x15Animal\\V1\\GPBMetadata\xea\x02\n" +
+	"Animal::V1b\x06proto3"
 
 var (
-	file_animalpb_animal_proto_rawDescOnce sync.Once
-	file_animalpb_animal_proto_rawDescData []byte
+	file_animal_v1_animal_proto_rawDescOnce sync.Once
+	file_animal_v1_animal_proto_rawDescData []byte
 )
 
-func file_animalpb_animal_proto_rawDescGZIP() []byte {
-	file_animalpb_animal_proto_rawDescOnce.Do(func() {
-		file_animalpb_animal_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_animalpb_animal_proto_rawDesc), len(file_animalpb_animal_proto_rawDesc)))
+func file_animal_v1_animal_proto_rawDescGZIP() []byte {
+	file_animal_v1_animal_proto_rawDescOnce.Do(func() {
+		file_animal_v1_animal_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_animal_v1_animal_proto_rawDesc), len(file_animal_v1_animal_proto_rawDesc)))
 	})
-	return file_animalpb_animal_proto_rawDescData
+	return file_animal_v1_animal_proto_rawDescData
 }
 
-var file_animalpb_animal_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_animalpb_animal_proto_goTypes = []any{
-	(*SpeakRequest)(nil),  // 0: proto.SpeakRequest
-	(*SpeakResponse)(nil), // 1: proto.SpeakResponse
+var file_animal_v1_animal_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_animal_v1_animal_proto_goTypes = []any{
+	(*SpeakRequest)(nil),  // 0: animal.v1.SpeakRequest
+	(*SpeakResponse)(nil), // 1: animal.v1.SpeakResponse
 }
-var file_animalpb_animal_proto_depIdxs = []int32{
-	0, // 0: proto.Animal.Speak:input_type -> proto.SpeakRequest
-	1, // 1: proto.Animal.Speak:output_type -> proto.SpeakResponse
+var file_animal_v1_animal_proto_depIdxs = []int32{
+	0, // 0: animal.v1.Animal.Speak:input_type -> animal.v1.SpeakRequest
+	1, // 1: animal.v1.Animal.Speak:output_type -> animal.v1.SpeakResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -149,26 +150,26 @@ var file_animalpb_animal_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_animalpb_animal_proto_init() }
-func file_animalpb_animal_proto_init() {
-	if File_animalpb_animal_proto != nil {
+func init() { file_animal_v1_animal_proto_init() }
+func file_animal_v1_animal_proto_init() {
+	if File_animal_v1_animal_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_animalpb_animal_proto_rawDesc), len(file_animalpb_animal_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_animal_v1_animal_proto_rawDesc), len(file_animal_v1_animal_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_animalpb_animal_proto_goTypes,
-		DependencyIndexes: file_animalpb_animal_proto_depIdxs,
-		MessageInfos:      file_animalpb_animal_proto_msgTypes,
+		GoTypes:           file_animal_v1_animal_proto_goTypes,
+		DependencyIndexes: file_animal_v1_animal_proto_depIdxs,
+		MessageInfos:      file_animal_v1_animal_proto_msgTypes,
 	}.Build()
-	File_animalpb_animal_proto = out.File
-	file_animalpb_animal_proto_goTypes = nil
-	file_animalpb_animal_proto_depIdxs = nil
+	File_animal_v1_animal_proto = out.File
+	file_animal_v1_animal_proto_goTypes = nil
+	file_animal_v1_animal_proto_depIdxs = nil
 }
