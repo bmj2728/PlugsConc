@@ -2,23 +2,43 @@ syntax = "proto3";
 package filesystem.v1;
 option go_package = "github.com/bmj2728/PlugsConc/shared/protogen/filesystem/v1;filesystemv1";
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+// FileSystem is a service provided by the host process and is generally preferred over granting direct file system
+// access to the plugin process
 service FileSystem {
-  rpc ListFiles(ListFileRequest) returns (ListFileResponse);
-  rpc IsDir(IsDirRequest) returns (IsDirResponse);
+  rpc ReadDir(ReadDirRequest) returns (ReadDirResponse); //underlying returns []DirEntry, error
+  rpc Stat(StatRequest) returns (StatResponse); // underlying returns FileInfo, error
 }
 
-message ListFileRequest {
+// DirEntry represents
+message DirEntry {
+  string name = 1;
+  bool is_dir = 2;
+}
+
+message FileInfo {
+  string name = 1;
+  uint64 size = 2;
+  uint32 mode = 3;
+  google.protobuf.Timestamp mod_time = 4;
+  bool is_dir =5;
+  google.protobuf.Any sys = 6;
+}
+
+message ReadDirRequest {
   string path = 1;
 }
 
-message ListFileResponse {
-  repeated string filename = 1;
+message ReadDirResponse {
+  repeated DirEntry entries = 1;
 }
 
-message IsDirRequest {
+message StatRequest {
   string path = 1;
 }
 
-message IsDirResponse {
-  bool isDir = 1;
+message StatResponse {
+  FileInfo info =1;
 }
