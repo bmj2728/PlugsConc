@@ -1,6 +1,8 @@
 // Package ngfs provides wrappers for various file system functions used by the host file system service
 package ngfs
 
+import "os"
+
 // The host service will receive a request over gRPC.
 // We then need to validate that the requestor has permission to perform the action.
 // We also need to validate authority to operator on the file/directory.
@@ -29,3 +31,8 @@ package ngfs
 //	// Read the directory, returning the slice of DirEntry and an error, close the root
 //	return fs.ReadDir(r.FS(), ".")
 //}
+
+type NGFS interface {
+	ReadDir(path string) ([]os.DirEntry, error)
+	Stat(path string) (os.FileInfo, error)
+}
