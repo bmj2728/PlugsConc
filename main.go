@@ -245,6 +245,7 @@ func main() {
 		return
 	}
 
+	// plumbing
 	catClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  catHandshake,
 		Logger:           multiLogger.Named("cat"),
@@ -291,6 +292,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// plumbing
 	gDogClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  dogHandshake,
 		Plugins:          pluginMapImported,
@@ -302,16 +304,29 @@ func main() {
 	})
 	defer gDogClient.Kill()
 
+	// porcelain
 	rpcGDogClient, err := gDogClient.Client()
 	if err != nil {
 		multiLogger.Error("Failed to create gDogClient", logger.KeyError, err)
 		os.Exit(1)
 	}
-	gDog, err := rpcGDogClient.Dispense("dog-grpc")
+	// get the raw interface
+	raw, err := rpcGDogClient.Dispense("dog-grpc")
 	if err != nil {
 		multiLogger.Error("Failed to dispense dog", logger.KeyError, err)
+		os.Exit(1)
 	}
-	gWoof := gDog.(animal.Animal).Speak(false)
+	// coerce the raw interface to the animal.Animal interface
+	// we can now call the methods on the animal.Animal interface as if it was local code
+	gdog, ok := raw.(animal.Animal)
+	if !ok {
+		multiLogger.Error("Failed to assert raw as animal.Animal", logger.KeyError, err)
+		os.Exit(1)
+	}
+
+	// end of actual plugin setup
+
+	gWoof := gdog.Speak(false)
 
 	fmt.Printf("The dog-grpc says %s\n", gWoof)
 
